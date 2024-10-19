@@ -1,0 +1,56 @@
+{
+  "name": "@react-native-ohos/react-native-wechat-lib",
+  "description": "react native ohos react native wechat lib",
+  "license": "MIT",
+  "version": "3.0.5-rc.1",
+  "react-native": "src/index.ts",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "types": "lib/typescript/index.d.ts",
+  "scripts": {
+    "prepack": "bob build",
+    "pack:prod": "npm pack",
+    "start": "react-native start",
+    "codegen-lib": "react-native codegen-lib-harmony --no-safety-check --npm-package-name @react-native-ohos/react-native-wechat-lib --cpp-output-path ../tester/harmony/react_native_wechat_lib/src/main/cpp/generated --ets-output-path ../tester/harmony/react_native_wechat_lib/src/main/ets/generated --turbo-modules-spec-paths ./src/specs/NativeRNWechatLibModule.ts"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "react-native-builder-bob": "^0.21.3",
+    "typescript": "4.5.5",
+    "@rnoh/react-native-harmony-cli": "file:../tester/rnoh_package/rnoh-react-native-harmony-cli-0.0.27.tgz"
+  },
+  "dependencies": {
+    "react-native-wechat-lib": "3.0.4"
+  },
+  "files": [
+    "src",
+    "harmony",
+    "lib",
+    "License",
+    "package.json",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__"
+  ],
+  "keywords": ["react-native", "ohos", "wechat-lib"],
+  "harmony": {
+    "alias": "react-native-wechat-lib"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}
