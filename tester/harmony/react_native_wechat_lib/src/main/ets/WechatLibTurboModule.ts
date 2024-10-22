@@ -24,7 +24,8 @@
 
 import { TurboModule } from '@rnoh/react-native-openharmony/ts';
 import { TM } from './generated/ts';
-import { common } from '@kit.AbilityKit';
+import { bundleManager, common } from '@kit.AbilityKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 
 declare function getContext(context: any): common.UIAbilityContext;
 
@@ -35,6 +36,16 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   private logger = this.ctx.logger.clone('WechatLibTurboModuleLogger');
 
   registerApp(appId: string, universalLink: string): Promise<boolean> {
+    try {
+      bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_SIGNATURE_INFO).then((data) => {
+        this.logger.info('data:' + JSON.stringify(data));
+      }).catch((err: BusinessError) => {
+        this.logger.error('message:' + err.message);
+      });
+    } catch (err) {
+      let message = (err as BusinessError).message;
+      this.logger.error('error:' + message);
+    }
     return Promise.resolve(true);
   }
 
@@ -142,9 +153,5 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   subscribeMessage(message: TM.WechatLibTurboModule.SubscribeMessageMetadata): Promise<{ errCode?: number | undefined; errStr?: string | undefined }> {
     const res = { errCode: 0, errStr: undefined }
     return Promise.resolve(res);
-  }
-
-  openCustomerServiceChat(corpId: string, kfUrl: string): Promise<string> {
-    return Promise.resolve('string');
   }
 }

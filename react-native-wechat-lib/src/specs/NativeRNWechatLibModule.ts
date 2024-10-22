@@ -173,8 +173,6 @@ export interface Spec extends TurboModule {
   chooseInvoice: (data: ChooseInvoice) => Promise<{ errCode?: Int32; errStr?: string; cards: Invoice[] }>;
   pay: (payload: PaymentLoad) => Promise<{ errCode?: Int32; errStr?: string }>;
   subscribeMessage: (message: SubscribeMessageMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  openCustomerServiceChat: (corpId: string, kfUrl: string) => Promise<string>;
-  
 }
 
 

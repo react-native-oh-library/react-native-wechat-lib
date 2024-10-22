@@ -80,8 +80,6 @@ export namespace WechatLibTurboModule {
     pay(payload: PaymentLoad): Promise<{errCode?: number, errStr?: string}>;
   
     subscribeMessage(message: SubscribeMessageMetadata): Promise<{errCode?: number, errStr?: string}>;
-  
-    openCustomerServiceChat(corpId: string, kfUrl: string): Promise<string>;
-  
+
   }
 }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "i": "cd ../react-native-wechat-lib && npm i && cd ../tester && npm i",
+    "i": "cd ../react-native-wechat-lib && npm i && npm run pack:prod && cd ../tester && npm i",
     "reStart": "npm run install:pkg && npm run codegen && hdc rport tcp:8081 tcp:8081 && react-native start",
     "start": "hdc rport tcp:8081 tcp:8081 && react-native start",
     "codegen": "react-native codegen-harmony --rnoh-module-path ./harmony/entry/oh_modules/@rnoh/react-native-openharmony",
