@@ -8,3 +8,6 @@ bundle.harmony.js
 **/oh-package-lock.json5
 **/BuildProfile.ets
 /OHOS_OpenSDK1.0.0/*
+lib/*
+*.tar.gz
+*.tgz
