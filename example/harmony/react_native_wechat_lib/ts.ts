@@ -24,3 +24,6 @@
 
 export * from "./src/main/ets/WechatLibPackage";
 export * from "./src/main/ets/WechatLibTurboModule";
+export * from "./src/main/ets/model/WXApiWrap";
+export  * as wxopensdk from '@tencent/wechat_open_sdk';
+

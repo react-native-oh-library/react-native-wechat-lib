@@ -1,10 +1,11 @@
 import React from 'react';
 import { Button, Alert, View, StyleSheet, ScrollView } from 'react-native';
-import WeChat from '@react-native-ohos/react-native-wechat-lib';
+import WeChat from 'react-native-wechat-lib';
+import { APP_ID } from './src/constants';
 
 const App = () => {
   const handleRegisterApp = async () => {
-    const res = await WeChat.registerApp('wxd5a474c635b8fd17', '');
+    const res = await WeChat.registerApp(APP_ID, '');
     Alert.alert(JSON.stringify(res));
   };
 
@@ -34,6 +35,15 @@ const App = () => {
     }
   };
 
+  const handleSendAuthRequest = async () => {
+    try {
+      const res = await WeChat.sendAuthRequest();
+      console.log('%c  res:', 'color: #0e93e0;background: #aaefe5;', res);
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={{ height: 200 }}>
@@ -41,6 +51,7 @@ const App = () => {
         <Button onPress={handleOpenWXApp} title="openWXApp" />
         <Button onPress={handleIsWXAppInstalled} title="isWXAppInstalled" />
         <Button onPress={handleShareText} title="shareText" />
+        <Button onPress={handleSendAuthRequest} title="授权登录" />
       </View>
     </ScrollView>
   );
