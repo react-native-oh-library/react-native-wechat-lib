@@ -1,14 +1,12 @@
 import { TurboModuleRegistry, TurboModule } from "react-native";
 import { Int32 } from "react-native/Libraries/Types/CodegenTypes";
 
-
 enum WXScene {
   WXSceneSession = 0 /**< 聊天界面 */,
   WXSceneTimeline = 1 /**< 朋友圈 */,
   WXSceneFavorite = 2 /**< 收藏 */,
   WXSceneSpecifiedSession = 3 /**< 指定联系人 */,
 }
-
 
 export interface WeChatReq {
   type?: string;
@@ -142,6 +140,7 @@ export interface PaymentLoad {
   timeStamp: string;
   package: string;
   sign: string;
+  extData: string;
 }
 
 export interface SubscribeMessageMetadata {
@@ -150,8 +149,23 @@ export interface SubscribeMessageMetadata {
   reserved?: string;
 }
 
+export interface ICommonRes {
+  errCode?: Int32;
+  errStr?: string;
+}
 
+export interface IChooseInvoiceRes {
+  errCode?: Int32;
+  errStr?: string;
+  cards: Invoice[];
+}
 
+interface IScanRes {
+  authCode: string | null;
+  errCode: string | null;
+}
+
+type Callback1 = (result: Object | null) => void;
 
 export interface Spec extends TurboModule {
   registerApp: (appId: string, universalLink?: string) => Promise<boolean>;
@@ -159,20 +173,21 @@ export interface Spec extends TurboModule {
   isWXAppSupportApi: () => Promise<boolean>;
   getApiVersion: () => Promise<string>;
   openWXApp: () => Promise<boolean>;
-  sendAuthRequest: (scope: string | string[], state?: string) => Promise<AuthResponse>;
-  authByScan: (appId: string, appSecret: string, onQRGet: (qrcode: string) => void) => Promise<ScanLoginResp>;
-  shareText: (message: ShareTextMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareImage: (message: ShareImageMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareLocalImage: (message: ShareImageMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareFile: (message: ShareFileMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareMusic: (message: ShareMusicMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareVideo: (message: ShareVideoMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareWebpage: (message: ShareWebpageMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  shareMiniProgram: (message: ShareMiniProgramMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  launchMiniProgram: (message: LaunchMiniProgramMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
-  chooseInvoice: (data: ChooseInvoice) => Promise<{ errCode?: Int32; errStr?: string; cards: Invoice[] }>;
-  pay: (payload: PaymentLoad) => Promise<{ errCode?: Int32; errStr?: string }>;
-  subscribeMessage: (message: SubscribeMessageMetadata) => Promise<{ errCode?: Int32; errStr?: string }>;
+  sendAuthRequest: (scope: string, state: string) => Promise<boolean>;
+  authByScan: (appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string) => Promise<IScanRes>;
+  shareText: (message: ShareTextMetadata) => Promise<boolean>;
+  shareImage: (message: ShareImageMetadata) => Promise<boolean>;
+  shareLocalImage: (message: ShareImageMetadata) => Promise<boolean>;
+  shareFile: (message: ShareFileMetadata) => Promise<boolean>;
+  shareMusic: (message: ShareMusicMetadata) => Promise<boolean>;
+  shareVideo: (message: ShareVideoMetadata) => Promise<boolean>;
+  shareWebpage: (message: ShareWebpageMetadata) => Promise<boolean>;
+  shareMiniProgram: (message: ShareMiniProgramMetadata) => Promise<boolean>;
+  launchMiniProgram: (message: LaunchMiniProgramMetadata) => Promise<boolean>;
+  chooseInvoice: (data: ChooseInvoice) => Promise<IChooseInvoiceRes>;
+  pay: (payload: PaymentLoad, callback: Callback1) => Promise<boolean>;
+  subscribeMessage: (message: SubscribeMessageMetadata) => Promise<boolean>;
+  getNativeEventEmitter: () => Object;
 }
 
 

@@ -14,9 +14,7 @@ export namespace WechatLibTurboModule {
     WXSceneSpecifiedSession = 3,
   }
 
-  export type AuthResponse = {errCode?: number, errStr?: string, openId?: string, code?: string, url?: string, lang?: string, country?: string}
-  
-  export type ScanLoginResp = {nickname?: string, headimgurl?: string, openid?: string, unionid?: string, errCode?: number, errStr?: string}
+  export type IScanRes = {authCode: null | string, errCode: null | string}
   
   export type ShareTextMetadata = {text: string, scene?: WXScene}
   
@@ -38,7 +36,9 @@ export namespace WechatLibTurboModule {
   
   export type Invoice = {appId: string, cardId: string, encryptCode: string}
   
-  export type PaymentLoad = {partnerId: string, prepayId: string, nonceStr: string, timeStamp: string, package: string, sign: string}
+  export type IChooseInvoiceRes = {errCode?: number, errStr?: string, cards: Invoice[]}
+  
+  export type PaymentLoad = {partnerId: string, prepayId: string, nonceStr: string, timeStamp: string, package: string, sign: string, extData: string}
   
   export type SubscribeMessageMetadata = {scene?: WXScene, templateId: string, reserved?: string}
   
@@ -53,33 +53,35 @@ export namespace WechatLibTurboModule {
   
     openWXApp(): Promise<boolean>;
   
-    sendAuthRequest(scope: Object, state: string): Promise<AuthResponse>;
+    sendAuthRequest(scope: string, state: string): Promise<boolean>;
   
-    authByScan(appId: string, appSecret: string, onQRGet: (qrcode: string) => void): Promise<ScanLoginResp>;
+    authByScan(appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string): Promise<IScanRes>;
   
-    shareText(message: ShareTextMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareText(message: ShareTextMetadata): Promise<boolean>;
   
-    shareImage(message: ShareImageMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareImage(message: ShareImageMetadata): Promise<boolean>;
   
-    shareLocalImage(message: ShareImageMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareLocalImage(message: ShareImageMetadata): Promise<boolean>;
   
-    shareFile(message: ShareFileMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareFile(message: ShareFileMetadata): Promise<boolean>;
   
-    shareMusic(message: ShareMusicMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareMusic(message: ShareMusicMetadata): Promise<boolean>;
   
-    shareVideo(message: ShareVideoMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareVideo(message: ShareVideoMetadata): Promise<boolean>;
   
-    shareWebpage(message: ShareWebpageMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareWebpage(message: ShareWebpageMetadata): Promise<boolean>;
   
-    shareMiniProgram(message: ShareMiniProgramMetadata): Promise<{errCode?: number, errStr?: string}>;
+    shareMiniProgram(message: ShareMiniProgramMetadata): Promise<boolean>;
   
-    launchMiniProgram(message: LaunchMiniProgramMetadata): Promise<{errCode?: number, errStr?: string}>;
+    launchMiniProgram(message: LaunchMiniProgramMetadata): Promise<boolean>;
   
-    chooseInvoice(data: ChooseInvoice): Promise<{errCode?: number, errStr?: string, cards: Invoice[]}>;
+    chooseInvoice(data: ChooseInvoice): Promise<IChooseInvoiceRes>;
   
-    pay(payload: PaymentLoad): Promise<{errCode?: number, errStr?: string}>;
+    pay(payload: PaymentLoad, callback: (result: null | Object) => void): Promise<boolean>;
   
-    subscribeMessage(message: SubscribeMessageMetadata): Promise<{errCode?: number, errStr?: string}>;
-
+    subscribeMessage(message: SubscribeMessageMetadata): Promise<boolean>;
+  
+    getNativeEventEmitter(): Object;
+  
   }
 }

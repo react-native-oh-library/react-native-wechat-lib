@@ -7,6 +7,5 @@
   "dependencies": {
     "@rnoh/react-native-openharmony": "0.72.32",
     "@react-native-ohos/react-native-wechat-lib": "file:../react_native_wechat_lib",
-    "@tencent/wechat_open_sdk": "1.0.0"
   }
 }
