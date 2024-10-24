@@ -26,9 +26,10 @@ import { EventEmitter, TurboModule } from '@rnoh/react-native-openharmony/ts';
 import { TM } from './generated/ts';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { wxopensdk } from '../../../ts';
+import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
+import { Want } from '@kit.AbilityKit';
 
 enum LoadingStatus {
   INIT,
@@ -43,7 +44,7 @@ enum LoadingStatus {
 
 export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTurboModule.Spec {
   private appId: string | null = null;
-  private wxApi: wxopensdk.WXApi | null = null;
+  private static wxApi: wxopensdk.WXApi | null = null;
   private context = getContext(this) as common.UIAbilityContext;
   lastOAuth: wxopensdk.IDiffDevOAuth | null = null
   loadStatus: LoadingStatus = LoadingStatus.INIT
@@ -57,13 +58,17 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     return this.listener;
   }
 
+  public static handleWant(want: Want) {
+    WechatLibTurboModule.wxApi?.handleWant(want, WXEventHandler)
+  }
+
   /**
    * 暂不支持的接口统一reject
    * @returns
    */
   notSupportPromise(): Promise<never> {
     return new Promise((_, reject) => {
-      if (!this.wxApi) {
+      if (!WechatLibTurboModule.wxApi) {
         reject(new Error(this.NOT_REGISTERED));
       } else {
         reject(new Error(this.API_NOT_SUPPORTED));
@@ -72,7 +77,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   /**
-   * 注册应用，初始化this.wxApi
+   * 注册应用，初始化WechatLibTurboModule.wxApi
    * @param appId
    * @param universalLink
    * @returns
@@ -80,7 +85,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   async registerApp(appId: string, universalLink: string): Promise<boolean> {
     try {
       this.appId = appId;
-      this.wxApi = wxopensdk.WXAPIFactory.createWXAPI(appId);
+      WechatLibTurboModule.wxApi = wxopensdk.WXAPIFactory.createWXAPI(appId);
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -106,16 +111,16 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
    * @returns
    */
   async openWXApp(): Promise<boolean> {
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       return Promise.reject(new Error(this.NOT_REGISTERED));
     }
 
-    const result = await this.wxApi.openWechat(this.context);
+    const result = await WechatLibTurboModule.wxApi.openWechat(this.context);
     return Promise.resolve(result);
   }
 
   async sendAuthRequest(scope: string, state: string): Promise<boolean> {
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       throw new Error(this.NOT_REGISTERED);
     }
 
@@ -125,7 +130,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     req.scope = scope
     req.state = state
     req.transaction = ''
-    const isRequestSent = this.wxApi.sendReq(this.context, req);
+    const isRequestSent = WechatLibTurboModule.wxApi.sendReq(this.context, req);
     return Promise.resolve(isRequestSent);
   }
 
@@ -143,7 +148,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     schemeData: string,
   ): Promise<TM.WechatLibTurboModule.IScanRes> {
 
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       throw new Error(this.NOT_REGISTERED);
     }
 
@@ -176,7 +181,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   async shareText(message: TM.WechatLibTurboModule.ShareTextMetadata): Promise<boolean> {
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       throw new Error("NOT_REGISTERED");
     }
 
@@ -193,7 +198,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     req.message = mediaMessage
 
     // 调用 api.sendReq 方法并返回结果
-    const isRequestSent = await this.wxApi.sendReq(this.context, req);
+    const isRequestSent = await WechatLibTurboModule.wxApi.sendReq(this.context, req);
     return Promise.resolve(isRequestSent);
   }
 
@@ -214,7 +219,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   async shareImage(message: TM.WechatLibTurboModule.ShareImageMetadata): Promise<boolean> {
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       throw new Error(this.NOT_REGISTERED);
     }
 
@@ -244,12 +249,12 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
           req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
           req.message = mediaMessage;
 
-          if (!this.wxApi) {
+          if (!WechatLibTurboModule.wxApi) {
             reject(new Error(this.NOT_REGISTERED));
             return;
           }
 
-          const isRequestSent = await this.wxApi.sendReq(this.context, req);
+          const isRequestSent = await WechatLibTurboModule.wxApi.sendReq(this.context, req);
           resolve(isRequestSent);
         } catch (error) {
           reject(error);
@@ -291,7 +296,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   async pay(payload: TM.WechatLibTurboModule.PaymentLoad, callback: (result: Object | null) => void): Promise<boolean> {
-    if (!this.wxApi) {
+    if (!WechatLibTurboModule.wxApi) {
       throw new Error(this.NOT_REGISTERED);
     }
     let payReq = new wxopensdk.PayReq
@@ -320,7 +325,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       payReq.extData = payload.extData;
     }
 
-    const result = this.wxApi?.sendReq(this.context, payReq);
+    const result = WechatLibTurboModule.wxApi?.sendReq(this.context, payReq);
     callback(result ? null : this.INVOKE_FAILED);
     return Promise.resolve(result)
   }

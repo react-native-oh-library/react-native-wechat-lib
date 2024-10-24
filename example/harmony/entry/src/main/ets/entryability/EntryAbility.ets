@@ -1,6 +1,6 @@
 import {RNAbility} from '@rnoh/react-native-openharmony';
 import { AbilityConstant, Want } from '@kit.AbilityKit';
-import { WXApi, WXEventHandler } from '@react-native-ohos/react-native-wechat-lib/src/main/ets/model/WXApiWrap';
+import { WechatLibTurboModule } from '@react-native-ohos/react-native-wechat-lib';
 
 export default class EntryAbility extends RNAbility {
 
@@ -18,6 +18,6 @@ export default class EntryAbility extends RNAbility {
   }
 
   private handleWeChatCallIfNeed(want: Want) {
-    WXApi.handleWant(want, WXEventHandler)
+    WechatLibTurboModule.handleWant(want)
   }
 }
