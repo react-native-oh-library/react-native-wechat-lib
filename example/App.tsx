@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Alert, View, StyleSheet, ScrollView } from 'react-native';
-import WeChat from 'react-native-wechat-lib';
+import * as WeChat from 'react-native-wechat-lib';
 import { APP_ID } from './src/constants';
 
 const App = () => {
@@ -37,7 +37,23 @@ const App = () => {
 
   const handleSendAuthRequest = async () => {
     try {
-      const res = await WeChat.sendAuthRequest();
+      const res = await WeChat.sendAuthRequest("snsapi_userinfo", "none");
+      console.log('%c  res:', 'color: #0e93e0;background: #aaefe5;', res);
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
+  const handlePay = async () => {
+    try {
+      const res = await WeChat.pay({
+        partnerId: "2480306091",
+        prepayId: "wx26161523845794ecced251acf2b6860000",
+        nonceStr: "vmall_240926161523_993_2774",
+        timeStamp: "1727338524",
+        package: "Sign=WXPay",
+        sign: "rAqsrx5yLfRNBGvlHYuLhUsNK0OPeOLQ5xlvhxFo9guPU4HeNtzRdPaGAXAzXvn7V5chVe8sj3BfvDgwXlCKctCcFIllOgheyZbZ7btFC"
+      });
       console.log('%c  res:', 'color: #0e93e0;background: #aaefe5;', res);
     } catch (error) {
       console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
@@ -52,6 +68,7 @@ const App = () => {
         <Button onPress={handleIsWXAppInstalled} title="isWXAppInstalled" />
         <Button onPress={handleShareText} title="shareText" />
         <Button onPress={handleSendAuthRequest} title="授权登录" />
+        <Button onPress={handlePay} title="pay" />
       </View>
     </ScrollView>
   );
