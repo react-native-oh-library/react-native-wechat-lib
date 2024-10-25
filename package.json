@@ -18,7 +18,7 @@
     "react-native": "*"
   },
   "devDependencies": {
-    "@rnoh/react-native-harmony-cli": "file:../tester/rnoh_package/rnoh-react-native-harmony-cli-0.0.27.tgz",
+    "@rnoh/react-native-harmony-cli": "file:./example/rnoh_package/rnoh-react-native-harmony-cli-0.0.27.tgz",
     "@types/events": "^3.0.3",
     "react-native-builder-bob": "^0.21.3",
     "typescript": "4.5.5"
