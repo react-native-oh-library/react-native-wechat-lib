@@ -15,6 +15,7 @@ import WechatLib, {
 } from "./specs/NativeRNWechatLibModule";
 
 let isAppRegistered = false;
+const LoggerPrefix = 'WechatLibTurboModuleLogger'
 
 // Event emitter to dispatch request and response from WechatLib.
 const emitter = new EventEmitter();
@@ -174,13 +175,12 @@ const nativeChooseInvoice = wrapApi(WechatLib.chooseInvoice);
 const nativeShareFile = wrapApi(WechatLib.shareFile);
 const nativeScan = wrapApi(WechatLib.authByScan);
 
+const NormalRes = { errCode: 0, errStr: '' };
+
 // https://developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_access_token.html
 const getAccessToken = async (appId: string, appSecret: string) => {
   let url =
-    "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" +
-    appId +
-    "&secret=" +
-    appSecret;
+  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" + appId + "&secret=" + appSecret;
   const response = await fetch(url);
   const res = await response.json();
   return res.access_token;
@@ -213,7 +213,6 @@ const getUserInfo = (appId: string, appSecret: string, code: string, callback: (
       return res.json();
     })
     .then((res) => {
-      // console.log('wechat get access code success: ', res.access_token);
       let userInfoUrl =
         "https://api.weixin.qq.com/sns/userinfo?access_token=" + res.access_token + "&openid=" + res.openid;
       fetch(userInfoUrl)
@@ -221,7 +220,6 @@ const getUserInfo = (appId: string, appSecret: string, code: string, callback: (
           return res2.json();
         })
         .then((json) => {
-          // console.log('wechat get user info success: ', json);
           callback({
             nickname: json.nickname,
             headimgurl: json.headimgurl,
@@ -230,12 +228,12 @@ const getUserInfo = (appId: string, appSecret: string, code: string, callback: (
           });
         })
         .catch((e) => {
-          console.warn("wechat get user info fail ", e);
+          console.warn(`${LoggerPrefix} wechat get user info fail `, e);
           callback({ error: e });
         });
     })
     .catch((e) => {
-      console.warn("wechat get access code fail ", e);
+      console.warn(`${LoggerPrefix} wechat get access code fail `, e);
       callback({ error: e });
     });
 };
@@ -259,20 +257,24 @@ const generateObjectId = () => {
  */
 export function authByScan(appId: string, appSecret: string, onQRGet: (qrcode: string) => void) {
   return new Promise(async (resolve, reject) => {
+    if (!appId || !appSecret) {
+      reject(
+        new WechatError({
+          errStr: "请申请open账号，并传入正确的 appId 和 appSecret",
+          errCode: -1,
+        })
+      );
+    }
     const accessToken = await getAccessToken(appId, appSecret);
     const ticket = await getSDKTicket(accessToken);
     const nonceStr = generateObjectId();
     const timestamp = String(Math.round(Date.now() / 1000));
     const signature = createSignature(appId, nonceStr, ticket, timestamp);
 
-    const qrcodeEmitter = WechatLib.getNativeEventEmitter();
     // @ts-ignore
-    const unsubscribe = qrcodeEmitter.subscribe("onAuthGotQrcode", (res) => onQRGet && onQRGet(res.qrcode));
-    console.log('%c  unsubscribe:', 'color: #0e93e0;background: #aaefe5;', unsubscribe);
-
+    const unsubscribe = WechatLib.subscribeAuthGotQrcode(onQRGet);
     const ret = await nativeScan?.(appId, nonceStr, timestamp, "snsapi_userinfo", signature, "");
-    console.log('%c  ret:', 'color: #0e93e0;background: #aaefe5;', ret);
-    unsubscribe();
+    WechatLib.unSubscribeAuthGotQrcode()
     if (!ret?.authCode) {
       reject(
         new WechatError({
@@ -283,7 +285,7 @@ export function authByScan(appId: string, appSecret: string, onQRGet: (qrcode: s
       return;
     }
     getUserInfo(appId, appSecret, ret?.authCode, (result) => {
-      console.log('扫码登录结果', result)
+      console.log(`${LoggerPrefix} 扫码登录结果`, result);
       if (!result.error) {
         resolve(result);
       } else {
@@ -305,14 +307,16 @@ export function authByScan(appId: string, appSecret: string, onQRGet: (qrcode: s
  */
 export function sendAuthRequest(scopes: string, state: string) {
   return new Promise((resolve, reject) => {
-    WechatLib.sendAuthRequest(scopes, state);
-    emitter.once("SendAuth.Resp", (resp) => {
+    const onSendAuthRes = (resp: any) => {
+      WechatLib.unregisterCallback("SendAuth.Resp");
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
         reject(new WechatError(resp));
       }
-    });
+    };
+    WechatLib.registerCallback("SendAuth.Resp", onSendAuthRes);
+    WechatLib.sendAuthRequest(scopes, state, () => {});
   });
 }
 
@@ -325,15 +329,13 @@ export function shareText(data: ShareTextMetadata) {
   if (data && data.scene == null) {
     data.scene = 0;
   }
-  return new Promise((resolve, reject) => {
-    nativeShareText?.(data);
-    emitter.once("SendMessageToWX.Resp", (resp) => {
-      if (resp.errCode === 0) {
-        resolve(resp);
-      } else {
-        reject(new WechatError(resp));
-      }
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      await nativeShareText?.(data)
+      resolve(NormalRes);
+    } catch (error) {
+      reject({ errCode: -1, errStr: (error as Error).message })
+    }
   });
 }
 
@@ -382,15 +384,13 @@ export function shareImage(data: ShareImageMetadata) {
   if (data && data.scene == null) {
     data.scene = 0;
   }
-  return new Promise((resolve, reject) => {
-    nativeShareImage?.(data);
-    emitter.once("SendMessageToWX.Resp", (resp) => {
-      if (resp.errCode === 0) {
-        resolve(resp);
-      } else {
-        reject(new WechatError(resp));
-      }
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      await nativeShareImage?.(data);
+      resolve(NormalRes);
+    } catch (error) {
+      reject({ errCode: -1, errStr: (error as Error).message })
+    }
   });
 }
 
@@ -403,15 +403,13 @@ export function shareLocalImage(data: ShareImageMetadata) {
   if (data && data.scene == null) {
     data.scene = 0;
   }
-  return new Promise((resolve, reject) => {
-    nativeShareLocalImage?.(data);
-    emitter.once("SendMessageToWX.Resp", (resp) => {
-      if (resp.errCode === 0) {
-        resolve(resp);
-      } else {
-        reject(new WechatError(resp));
-      }
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      await nativeShareLocalImage?.(data);
+      resolve(NormalRes);
+    } catch (error) {
+      reject({ errCode: -1, errStr: (error as Error).message })
+    }
   });
 }
 
@@ -579,16 +577,18 @@ export function pay(data: PaymentLoad): Promise<PayResponse> {
   data.timeStamp = String(data.timeStamp);
 
   return new Promise((resolve, reject) => {
-    WechatLib.pay(data, (result: any) => {
-      if (result) reject(result);
-    });
-
-    emitter.once("PayReq.Resp", (resp: PayResponse) => {
+    const onPayRes = (resp: any) => {
+      WechatLib.unregisterCallback("Pay.Resp");
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
         reject(new WechatError(resp));
       }
+    };
+    WechatLib.registerCallback("Pay.Resp", onPayRes);
+
+    WechatLib.pay(data, (result: any) => {
+      if (result) reject(result);
     });
   });
 }

@@ -14,7 +14,7 @@ export namespace WechatLibTurboModule {
     WXSceneSpecifiedSession = 3,
   }
 
-  export type IScanRes = {authCode: null | string, errCode: null | string}
+  export type GeneratedTypeLiteralInterface_2 = {authCode: null | string, errCode: null | number}
   
   export type ShareTextMetadata = {text: string, scene?: WXScene}
   
@@ -34,54 +34,56 @@ export namespace WechatLibTurboModule {
   
   export type ChooseInvoice = {signType?: string, nonceStr?: string, timeStamp?: number, cardSign?: string}
   
-  export type Invoice = {appId: string, cardId: string, encryptCode: string}
-  
-  export type IChooseInvoiceRes = {errCode?: number, errStr?: string, cards: Invoice[]}
-  
   export type PaymentLoad = {partnerId: string, prepayId: string, nonceStr: string, timeStamp: string, package: string, sign: string, extData: string}
   
   export type SubscribeMessageMetadata = {scene?: WXScene, templateId: string, reserved?: string}
   
   export interface Spec {
-    registerApp(appId: string, universalLink: string): Promise<boolean>;
+    registerApp(appId: string, universalLink: string, callback: (error: null | string, result: null | boolean) => void): void;
   
-    isWXAppInstalled(): Promise<boolean>;
+    isWXAppInstalled(callback: (error: null | string, result: null | boolean) => void): void;
   
-    isWXAppSupportApi(): Promise<boolean>;
+    isWXAppSupportApi(callback: (error: null | string, result: null | boolean) => void): void;
   
-    getApiVersion(): Promise<string>;
+    getApiVersion(callback: (error: null | string, result: null | boolean) => void): void;
   
-    openWXApp(): Promise<boolean>;
+    openWXApp(callback: (error: null | string, result: null | boolean) => void): void;
   
-    sendAuthRequest(scope: string, state: string): Promise<boolean>;
+    sendAuthRequest(scope: string, state: string, callback: (error: null | string, result: null | boolean) => void): void;
   
-    authByScan(appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string): Promise<IScanRes>;
+    authByScan(appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string, callback: (error: null | string, result: null | GeneratedTypeLiteralInterface_2) => void): void;
   
-    shareText(message: ShareTextMetadata): Promise<boolean>;
+    shareText(message: ShareTextMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareImage(message: ShareImageMetadata): Promise<boolean>;
+    shareImage(message: ShareImageMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareLocalImage(message: ShareImageMetadata): Promise<boolean>;
+    shareLocalImage(message: ShareImageMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareFile(message: ShareFileMetadata): Promise<boolean>;
+    shareFile(message: ShareFileMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareMusic(message: ShareMusicMetadata): Promise<boolean>;
+    shareMusic(message: ShareMusicMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareVideo(message: ShareVideoMetadata): Promise<boolean>;
+    shareVideo(message: ShareVideoMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareWebpage(message: ShareWebpageMetadata): Promise<boolean>;
+    shareWebpage(message: ShareWebpageMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    shareMiniProgram(message: ShareMiniProgramMetadata): Promise<boolean>;
+    shareMiniProgram(message: ShareMiniProgramMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    launchMiniProgram(message: LaunchMiniProgramMetadata): Promise<boolean>;
+    launchMiniProgram(message: LaunchMiniProgramMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    chooseInvoice(data: ChooseInvoice): Promise<IChooseInvoiceRes>;
+    chooseInvoice(data: ChooseInvoice, callback: (error: null | string, result: null | boolean) => void): void;
   
-    pay(payload: PaymentLoad, callback: (result: null | Object) => void): Promise<boolean>;
+    pay(payload: PaymentLoad, callback: (result: null | Object) => void): void;
   
-    subscribeMessage(message: SubscribeMessageMetadata): Promise<boolean>;
+    subscribeMessage(message: SubscribeMessageMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
-    getNativeEventEmitter(): Object;
+    subscribeAuthGotQrcode(onQRGet: (qrcode: string) => void): void;
+  
+    unSubscribeAuthGotQrcode(): void;
+  
+    registerCallback(name: string, callback: (result: null | Object) => void): void;
+  
+    unregisterCallback(name: string): void;
   
   }
 }

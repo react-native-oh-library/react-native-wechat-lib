@@ -6,21 +6,21 @@ export type OnWXResp = (resp: wxopensdk.BaseResp) => void
 const kTag = "WXApiEventHandlerImpl"
 
 class WXApiEventHandlerImpl implements wxopensdk.WXApiEventHandler {
-  private onReqCallbacks: Map<OnWXReq, OnWXReq> = new Map
-  private onRespCallbacks: Map<OnWXResp, OnWXResp> = new Map
+  private onReqCallbacks: Map<string, OnWXReq> = new Map
+  private onRespCallbacks: Map<string, OnWXResp> = new Map
 
-  registerOnWXReqCallback(on: OnWXReq) {
-    this.onReqCallbacks.set(on, on)
+  registerOnWXReqCallback(key: string, on: OnWXReq) {
+    this.onReqCallbacks.set(key, on)
   }
-  unregisterOnWXReqCallback(on: OnWXReq) {
-    this.onReqCallbacks.delete(on)
+  unregisterOnWXReqCallback(key: string) {
+    this.onReqCallbacks.delete(key)
   }
 
-  registerOnWXRespCallback(on: OnWXResp) {
-    this.onRespCallbacks.set(on, on)
+  registerOnWXRespCallback(key: string, on: OnWXResp) {
+    this.onRespCallbacks.set(key, on)
   }
-  unregisterOnWXRespCallback(on: OnWXResp) {
-    this.onRespCallbacks.delete(on)
+  unregisterOnWXRespCallback(key: string) {
+    this.onRespCallbacks.delete(key)
   }
 
   onReq(req: wxopensdk.BaseReq): void {
