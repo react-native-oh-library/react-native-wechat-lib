@@ -30,6 +30,7 @@ import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 
 enum LoadingStatus {
   INIT,
@@ -52,6 +53,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   private INVOKE_FAILED = "WeChat API invoke returns false.";
   private API_NOT_SUPPORTED = "Api not supported.";
   private logger = this.ctx.logger.clone('WechatLibTurboModuleLogger');
+  private currentScene = wxopensdk.SendMessageToWXReq.WXSceneSession;
   listener = new EventEmitter();
 
   getNativeEventEmitter() {
@@ -264,7 +266,42 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   async shareLocalImage(message: TM.WechatLibTurboModule.ShareImageMetadata): Promise<boolean> {
-    return Promise.resolve(false);
+    if (!this.wxApi) {
+      throw new Error("NOT_REGISTERED");
+    }
+    // 初始化 WXTextObject 对象
+    let imageObject = new wxopensdk.WXImageObject();
+    imageObject.uri = await this.getPictureUriFromAlbum()
+
+    let mediaMessage = new wxopensdk.WXMediaMessage()
+    mediaMessage.mediaObject = imageObject
+    let req = new wxopensdk.SendMessageToWXReq()
+    req.scene = this.currentScene
+    req.message = mediaMessage
+
+    const isRequestSent = this.wxApi.sendReq(this.context, req);
+    return Promise.resolve(isRequestSent);
+  }
+
+  async getPictureUriFromAlbum(): Promise<string> {
+    let PhotoSelectOptions = new photoAccessHelper.PhotoSelectOptions();
+    PhotoSelectOptions.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE;
+    PhotoSelectOptions.maxSelectNumber = 1;
+    let photoPicker = new photoAccessHelper.PhotoViewPicker();
+    let photoSelectResult: photoAccessHelper.PhotoSelectResult = await photoPicker.select(PhotoSelectOptions);
+    let albumPath = photoSelectResult.photoUris[0];
+
+    let context = getContext(this) as common.UIAbilityContext;
+    let file: fileIo.File | undefined;
+    file = fileIo.openSync(albumPath, fileIo.OpenMode.READ_ONLY);
+
+    let timeStamp = Date.now();
+    fileIo.copyFileSync(file.fd, context.filesDir + `/original-${timeStamp}.jpg`);
+    fileIo.closeSync(file);
+
+    let filePath = context.filesDir + `/original-${timeStamp}.jpg`;
+    // this.pixelMap = filePath
+    return fileUri.getUriFromPath(filePath);
   }
 
   shareFile(message: TM.WechatLibTurboModule.ShareFileMetadata): Promise<boolean> {
