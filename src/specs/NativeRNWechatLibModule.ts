@@ -160,34 +160,46 @@ export interface IChooseInvoiceRes {
   cards: Invoice[];
 }
 
-interface IScanRes {
-  authCode: string | null;
-  errCode: string | null;
-}
+// interface IScanRes {
+//   authCode: string | null;
+//   errCode: string | null;
+// }
 
 type Callback1 = (result: Object | null) => void;
+type CallbackBoolean = (error: string | null, result: boolean | null) => void;
+// type Emit
+
+interface GeneratedTypeLiteralInterface_2 {
+  authCode: string | null;
+  errCode: Int32 | null;
+}
+
+type CallbackAuthCode = (error: string | null, result: GeneratedTypeLiteralInterface_2 | null) => void
 
 export interface Spec extends TurboModule {
-  registerApp: (appId: string, universalLink?: string) => Promise<boolean>;
-  isWXAppInstalled: () => Promise<boolean>;
-  isWXAppSupportApi: () => Promise<boolean>;
-  getApiVersion: () => Promise<string>;
-  openWXApp: () => Promise<boolean>;
-  sendAuthRequest: (scope: string, state: string) => Promise<boolean>;
-  authByScan: (appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string) => Promise<IScanRes>;
-  shareText: (message: ShareTextMetadata) => Promise<boolean>;
-  shareImage: (message: ShareImageMetadata) => Promise<boolean>;
-  shareLocalImage: (message: ShareImageMetadata) => Promise<boolean>;
-  shareFile: (message: ShareFileMetadata) => Promise<boolean>;
-  shareMusic: (message: ShareMusicMetadata) => Promise<boolean>;
-  shareVideo: (message: ShareVideoMetadata) => Promise<boolean>;
-  shareWebpage: (message: ShareWebpageMetadata) => Promise<boolean>;
-  shareMiniProgram: (message: ShareMiniProgramMetadata) => Promise<boolean>;
-  launchMiniProgram: (message: LaunchMiniProgramMetadata) => Promise<boolean>;
-  chooseInvoice: (data: ChooseInvoice) => Promise<IChooseInvoiceRes>;
-  pay: (payload: PaymentLoad, callback: Callback1) => Promise<boolean>;
-  subscribeMessage: (message: SubscribeMessageMetadata) => Promise<boolean>;
-  getNativeEventEmitter: () => Object;
+  registerApp: (appId: string, universalLink: string, callback: CallbackBoolean) => void;
+  isWXAppInstalled: (callback: CallbackBoolean) => void;
+  isWXAppSupportApi: (callback: CallbackBoolean) => void;
+  getApiVersion: (callback: CallbackBoolean) => void;
+  openWXApp: (callback: CallbackBoolean) => void;
+  sendAuthRequest: (scope: string, state: string, callback: CallbackBoolean) => void;
+  authByScan: (appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string, callback: CallbackAuthCode) => void;
+  shareText: (message: ShareTextMetadata, callback: CallbackBoolean) => void;
+  shareImage: (message: ShareImageMetadata, callback: CallbackBoolean) => void;
+  shareLocalImage: (message: ShareImageMetadata, callback: CallbackBoolean) => void;
+  shareFile: (message: ShareFileMetadata, callback: CallbackBoolean) => void;
+  shareMusic: (message: ShareMusicMetadata, callback: CallbackBoolean) => void;
+  shareVideo: (message: ShareVideoMetadata, callback: CallbackBoolean) => void;
+  shareWebpage: (message: ShareWebpageMetadata, callback: CallbackBoolean) => void;
+  shareMiniProgram: (message: ShareMiniProgramMetadata, callback: CallbackBoolean) => void;
+  launchMiniProgram: (message: LaunchMiniProgramMetadata, callback: CallbackBoolean) => void;
+  chooseInvoice: (data: ChooseInvoice, callback: CallbackBoolean) => void;
+  pay: (payload: PaymentLoad, callback: Callback1) => void;
+  subscribeMessage: (message: SubscribeMessageMetadata, callback: CallbackBoolean) => void;
+  subscribeAuthGotQrcode: (onQRGet: (qrcode: string) => void) => void;
+  unSubscribeAuthGotQrcode: () => void;
+  registerCallback: (name: string, callback: Callback1) => void;
+  unregisterCallback: (name: string) => void;
 }
 
 

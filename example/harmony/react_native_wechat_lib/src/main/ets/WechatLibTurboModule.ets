@@ -30,7 +30,6 @@ import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
-import { photoAccessHelper } from '@kit.MediaLibraryKit';
 
 enum LoadingStatus {
   INIT,
@@ -42,22 +41,45 @@ enum LoadingStatus {
   INVALID_APP_SECRET,
 }
 
+type CallbackBoolean = (error: string | null, result: null | boolean) => void
+
+interface GeneratedTypeLiteralInterface_2 {
+  authCode: string | null;
+  errCode: wxopensdk.OAuthErrCode | null;
+}
+
+type CallbackAuthCode = (error: string | null, result: GeneratedTypeLiteralInterface_2 | null) => void
 
 export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTurboModule.Spec {
   private appId: string | null = null;
+  private wxEventHandler = WXEventHandler
   private static wxApi: wxopensdk.WXApi | null = null;
   private context = getContext(this) as common.UIAbilityContext;
   lastOAuth: wxopensdk.IDiffDevOAuth | null = null
   loadStatus: LoadingStatus = LoadingStatus.INIT
   private NOT_REGISTERED = "registerApp required.";
-  private INVOKE_FAILED = "WeChat API invoke returns false.";
   private API_NOT_SUPPORTED = "Api not supported.";
   private logger = this.ctx.logger.clone('WechatLibTurboModuleLogger');
-  private currentScene = wxopensdk.SendMessageToWXReq.WXSceneSession;
   listener = new EventEmitter();
+  unsubscribeAuthGotQrcode = () => {};
 
-  getNativeEventEmitter() {
-    return this.listener;
+  subscribeAuthGotQrcode(onQRGet: (qrcode: string) => void) {
+    this.unsubscribeAuthGotQrcode = this.listener.subscribe(
+      'onAuthGotQrcode',
+      (qrcode: string) => onQRGet && onQRGet(qrcode),
+    );
+  }
+
+  unSubscribeAuthGotQrcode() {
+    this.unsubscribeAuthGotQrcode();
+  }
+
+  registerCallback(name: string, handler: (result: null | Object) => void) {
+    this.wxEventHandler.registerOnWXRespCallback(name, handler)
+  }
+
+  unregisterCallback(name: string) {
+    this.wxEventHandler.unregisterOnWXRespCallback(name)
   }
 
   public static handleWant(want: Want) {
@@ -65,17 +87,15 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   /**
-   * 暂不支持的接口统一reject
+   * 暂不支持的接口统一返回
    * @returns
    */
-  notSupportPromise(): Promise<never> {
-    return new Promise((_, reject) => {
-      if (!WechatLibTurboModule.wxApi) {
-        reject(new Error(this.NOT_REGISTERED));
-      } else {
-        reject(new Error(this.API_NOT_SUPPORTED));
-      }
-    });
+  notSupportPromise(callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+    } else {
+      callback(this.API_NOT_SUPPORTED, null);
+    }
   }
 
   /**
@@ -84,46 +104,54 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
    * @param universalLink
    * @returns
    */
-  async registerApp(appId: string, universalLink: string): Promise<boolean> {
+  registerApp(appId: string, universalLink: string, callback: CallbackBoolean) {
     try {
       this.appId = appId;
       WechatLibTurboModule.wxApi = wxopensdk.WXAPIFactory.createWXAPI(appId);
-      return true;
+      callback(null, true)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Error while registering app with appId ${appId}: ${message}`);
-      return false;
+      callback(message, false)
     }
   }
 
-  isWXAppInstalled(): Promise<boolean> {
-    return this.notSupportPromise()
+  isWXAppInstalled(callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  isWXAppSupportApi(): Promise<boolean> {
-    return this.notSupportPromise()
+  isWXAppSupportApi(callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  getApiVersion(): Promise<string> {
-    return this.notSupportPromise()
+  getApiVersion(callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
   /**
    * 打开微信
    * @returns
    */
-  async openWXApp(): Promise<boolean> {
+  async openWXApp(callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
-      return Promise.reject(new Error(this.NOT_REGISTERED));
+      callback(this.NOT_REGISTERED, null);
+      return;
     }
 
-    const result = await WechatLibTurboModule.wxApi.openWechat(this.context);
-    return Promise.resolve(result);
+    try {
+      WechatLibTurboModule.wxApi.openWechat(this.context) as boolean;
+      // 常规是需要await等待结果返回，这里内部没有resolve，等不到结果 所以直接返回true
+      callback(null, true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Error while openWXAppopenWXApp ${message}`);
+    }
   }
 
-  async sendAuthRequest(scope: string, state: string): Promise<boolean> {
+  async sendAuthRequest(scope: string, state: string, callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
-      throw new Error(this.NOT_REGISTERED);
+      callback(this.NOT_REGISTERED, null);
+      return;
     }
 
     let req = new wxopensdk.SendAuthReq
@@ -132,8 +160,15 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     req.scope = scope
     req.state = state
     req.transaction = ''
-    const isRequestSent = WechatLibTurboModule.wxApi.sendReq(this.context, req);
-    return Promise.resolve(isRequestSent);
+
+    try {
+      // 调用 api.sendReq 方法并返回结果
+      WechatLibTurboModule.wxApi.sendReq(this.context, req);
+      callback(null, true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Error while sendAuthRequest ${message}`);
+    }
   }
 
   // 触发 QRCode 事件
@@ -148,10 +183,11 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     scope: string,
     signature: string,
     schemeData: string,
-  ): Promise<TM.WechatLibTurboModule.IScanRes> {
-
+    callback: CallbackAuthCode
+  ) {
     if (!WechatLibTurboModule.wxApi) {
-      throw new Error(this.NOT_REGISTERED);
+      callback(this.NOT_REGISTERED, null);
+      return;
     }
 
     if (this.lastOAuth) {
@@ -159,32 +195,31 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     }
     let oauth = wxopensdk.DiffDevOAuthFactory.getDiffDevOAuth()!
 
-    return new Promise((resolve, reject) => {
-      oauth.startOAuth(appid, scope, nonceStr, timeStamp, signature, {
-        onGotQRCode: (base64JpegImageBuffer: string) => {
-          this.loadStatus = LoadingStatus.SCANNING
-          const base64String: string = `data:image/jpeg;base64,${base64JpegImageBuffer}`
-          this.emitQRCode(base64String); // 触发 QRCode 事件
-        },
-        onQRCodeScanned: () => {
-          this.loadStatus = LoadingStatus.SCANNED
-        },
-        onAuthFinish: (authCode: string) => {
-          this.loadStatus = LoadingStatus.SUCCESS
-          resolve({ authCode, errCode: null });
-        },
-        onAuthError: (errCode: wxopensdk.OAuthErrCode, errMsg: string) => {
-          this.loadStatus = LoadingStatus.FAILED
-          this.logger.error(`Error while startOAuth, errMsg is: ${errMsg}`);
-          reject({ authCode: null, errCode: errCode })
-        }
-      });
+    oauth.startOAuth(appid, scope, nonceStr, timeStamp, signature, {
+      onGotQRCode: (base64JpegImageBuffer: string) => {
+        this.loadStatus = LoadingStatus.SCANNING
+        const base64String: string = `data:image/jpeg;base64,${base64JpegImageBuffer}`
+        this.emitQRCode(base64String); // 触发 QRCode 事件
+      },
+      onQRCodeScanned: () => {
+        this.loadStatus = LoadingStatus.SCANNED
+      },
+      onAuthFinish: (authCode: string) => {
+        this.loadStatus = LoadingStatus.SUCCESS
+        callback(null, { authCode, errCode: null });
+      },
+      onAuthError: (errCode: wxopensdk.OAuthErrCode, errMsg: string) => {
+        this.loadStatus = LoadingStatus.FAILED
+        this.logger.error(`Error while startOAuth, errMsg is: ${errMsg}`);
+        callback(null, { authCode: null, errCode: errCode })
+      }
     });
   }
 
-  async shareText(message: TM.WechatLibTurboModule.ShareTextMetadata): Promise<boolean> {
+  async shareText(message: TM.WechatLibTurboModule.ShareTextMetadata, callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
-      throw new Error("NOT_REGISTERED");
+      callback(this.NOT_REGISTERED, null)
+      return
     }
 
     // 初始化 WXTextObject 对象
@@ -199,15 +234,15 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession
     req.message = mediaMessage
 
-    // 调用 api.sendReq 方法并返回结果
-    const isRequestSent = await WechatLibTurboModule.wxApi.sendReq(this.context, req);
-    return Promise.resolve(isRequestSent);
+    try {
+      // 调用 api.sendReq 方法并返回结果
+      WechatLibTurboModule.wxApi.sendReq(this.context, req);
+      callback(null, true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(`Error while openWXAppopenWXApp ${message}`);
+    }
   }
-
-  // shareImage(message: TM.WechatLibTurboModule.ShareImageMetadata): Promise<boolean> {
-  //   // const res: boolean = { errCode: 0, errStr: undefined }
-  //   return Promise.resolve(res);
-  // }
 
   downloadImageWithUrl(url: string,
     completion: (imageData: ArrayBuffer) => void) {
@@ -220,119 +255,106 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       })
   }
 
-  async shareImage(message: TM.WechatLibTurboModule.ShareImageMetadata): Promise<boolean> {
+  async shareImage(message: TM.WechatLibTurboModule.ShareImageMetadata, callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
-      throw new Error(this.NOT_REGISTERED);
+      callback(this.NOT_REGISTERED, null);
+      return;
     }
 
-    return new Promise((resolve, reject) => {
-      this.downloadImageWithUrl(message.imageUrl, async (imageData: ArrayBuffer) => {
-        if (!imageData) {
-          reject(new Error("Failed to retrieve imageData"));
+    this.downloadImageWithUrl(message.imageUrl, async (imageData: ArrayBuffer) => {
+      if (!imageData) {
+        callback("Failed to retrieve imageData", null);
+        return;
+      }
+
+      try {
+        let file: fileIo.File | undefined;
+        let filePath = getContext(this).filesDir + `/original-${Date.now()}.jpg`;
+        file = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
+        fileIo.writeSync(file.fd, imageData);
+        fileIo.closeSync(file);
+
+        // 初始化 WXImageObject
+        let imageObject = new wxopensdk.WXImageObject();
+        imageObject.uri = fileUri.getUriFromPath(filePath);
+
+        // 初始化 WXMediaMessage 对象
+        let mediaMessage = new wxopensdk.WXMediaMessage();
+        mediaMessage.mediaObject = imageObject;
+
+        let req = new wxopensdk.SendMessageToWXReq();
+        req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+        req.message = mediaMessage;
+
+        if (!WechatLibTurboModule.wxApi) {
+          callback(this.NOT_REGISTERED, null);
           return;
         }
 
-        try {
-          let file: fileIo.File | undefined;
-          let filePath = getContext(this).filesDir + `/original-${Date.now()}.jpg`;
-          file = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
-          fileIo.writeSync(file.fd, imageData);
-          fileIo.closeSync(file);
-
-          // 初始化 WXImageObject
-          let imageObject = new wxopensdk.WXImageObject();
-          imageObject.uri = fileUri.getUriFromPath(filePath);
-
-          // 初始化 WXMediaMessage 对象
-          let mediaMessage = new wxopensdk.WXMediaMessage();
-          mediaMessage.mediaObject = imageObject;
-
-          let req = new wxopensdk.SendMessageToWXReq();
-          req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
-          req.message = mediaMessage;
-
-          if (!WechatLibTurboModule.wxApi) {
-            reject(new Error(this.NOT_REGISTERED));
-            return;
-          }
-
-          const isRequestSent = await WechatLibTurboModule.wxApi.sendReq(this.context, req);
-          resolve(isRequestSent);
-        } catch (error) {
-          reject(error);
-        }
-      });
+        WechatLibTurboModule.wxApi.sendReq(this.context, req);
+        callback(null, true);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'downloadImageWithUrl Unknown error';
+        callback(message, null);
+      }
     });
+
   }
 
-  async shareLocalImage(message: TM.WechatLibTurboModule.ShareImageMetadata): Promise<boolean> {
-    if (!this.wxApi) {
-      throw new Error("NOT_REGISTERED");
+  async shareLocalImage(message: TM.WechatLibTurboModule.ShareImageMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
     }
-    // 初始化 WXTextObject 对象
-    let imageObject = new wxopensdk.WXImageObject();
-    imageObject.uri = await this.getPictureUriFromAlbum()
 
-    let mediaMessage = new wxopensdk.WXMediaMessage()
-    mediaMessage.mediaObject = imageObject
-    let req = new wxopensdk.SendMessageToWXReq()
-    req.scene = this.currentScene
-    req.message = mediaMessage
+    try {
+      let imageObject = new wxopensdk.WXImageObject();
+      // 需要用fileUri.getUriFromPath处理成带有包名的路径才能分享出去
+      imageObject.uri = fileUri.getUriFromPath(message.imageUrl.replace("file://", ""))
 
-    const isRequestSent = this.wxApi.sendReq(this.context, req);
-    return Promise.resolve(isRequestSent);
+      let mediaMessage = new wxopensdk.WXMediaMessage()
+      mediaMessage.mediaObject = imageObject
+      let req = new wxopensdk.SendMessageToWXReq()
+      req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+      req.message = mediaMessage
+
+      WechatLibTurboModule.wxApi.sendReq(this.context, req);
+      callback(null, true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
+      callback(message, null);
+    }
   }
 
-  async getPictureUriFromAlbum(): Promise<string> {
-    let PhotoSelectOptions = new photoAccessHelper.PhotoSelectOptions();
-    PhotoSelectOptions.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE;
-    PhotoSelectOptions.maxSelectNumber = 1;
-    let photoPicker = new photoAccessHelper.PhotoViewPicker();
-    let photoSelectResult: photoAccessHelper.PhotoSelectResult = await photoPicker.select(PhotoSelectOptions);
-    let albumPath = photoSelectResult.photoUris[0];
-
-    let context = getContext(this) as common.UIAbilityContext;
-    let file: fileIo.File | undefined;
-    file = fileIo.openSync(albumPath, fileIo.OpenMode.READ_ONLY);
-
-    let timeStamp = Date.now();
-    fileIo.copyFileSync(file.fd, context.filesDir + `/original-${timeStamp}.jpg`);
-    fileIo.closeSync(file);
-
-    let filePath = context.filesDir + `/original-${timeStamp}.jpg`;
-    // this.pixelMap = filePath
-    return fileUri.getUriFromPath(filePath);
+  shareFile(message: TM.WechatLibTurboModule.ShareFileMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  shareFile(message: TM.WechatLibTurboModule.ShareFileMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  shareMusic(message: TM.WechatLibTurboModule.ShareMusicMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  shareMusic(message: TM.WechatLibTurboModule.ShareMusicMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  shareVideo(message: TM.WechatLibTurboModule.ShareVideoMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  shareVideo(message: TM.WechatLibTurboModule.ShareVideoMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  launchMiniProgram(message: TM.WechatLibTurboModule.LaunchMiniProgramMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 
-  launchMiniProgram(message: TM.WechatLibTurboModule.LaunchMiniProgramMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  chooseInvoice(data: TM.WechatLibTurboModule.ChooseInvoice, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback);
   }
 
-  chooseInvoice(data: TM.WechatLibTurboModule.ChooseInvoice): Promise<TM.WechatLibTurboModule.IChooseInvoiceRes> {
-    return this.notSupportPromise()
-  }
-
-  async pay(payload: TM.WechatLibTurboModule.PaymentLoad, callback: (result: Object | null) => void): Promise<boolean> {
+  async pay(payload: TM.WechatLibTurboModule.PaymentLoad, callback: (result: Object | null) => void) {
     if (!WechatLibTurboModule.wxApi) {
       throw new Error(this.NOT_REGISTERED);
     }
@@ -362,12 +384,16 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       payReq.extData = payload.extData;
     }
 
-    const result = WechatLibTurboModule.wxApi?.sendReq(this.context, payReq);
-    callback(result ? null : this.INVOKE_FAILED);
-    return Promise.resolve(result)
+    try {
+      WechatLibTurboModule.wxApi.sendReq(this.context, payReq);
+      callback(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
+      callback(message);
+    }
   }
 
-  subscribeMessage(message: TM.WechatLibTurboModule.SubscribeMessageMetadata): Promise<boolean> {
-    return this.notSupportPromise()
+  subscribeMessage(message: TM.WechatLibTurboModule.SubscribeMessageMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
   }
 }

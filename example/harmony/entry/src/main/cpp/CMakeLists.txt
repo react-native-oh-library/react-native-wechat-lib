@@ -18,6 +18,7 @@ add_subdirectory("${RNOH_CPP_DIR}" ./rn)
 
 # RNOH_BEGIN: manual_package_linking_1
 add_subdirectory("${OH_MODULES}/@react-native-ohos/react-native-wechat-lib/src/main/cpp" ./wechat-lib)
+add_subdirectory("${OH_MODULES}/@react-native-oh-tpl/react-native-image-picker/src/main/cpp" ./image_picker)
 
 # RNOH_END: manual_package_linking_1
 
@@ -32,5 +33,6 @@ target_link_libraries(rnoh_app PUBLIC rnoh)
 
 # RNOH_BEGIN: manual_package_linking_2
 target_link_libraries(rnoh_app PUBLIC wechat_lib)
+target_link_libraries(rnoh_app PUBLIC rnoh_image_picker)
 
 # RNOH_END: manual_package_linking_2
