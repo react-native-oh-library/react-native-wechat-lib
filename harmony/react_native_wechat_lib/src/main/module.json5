@@ -1,0 +1,9 @@
+{
+  "module": {
+    "name": "react_native_wechat_lib",
+    "type": "har",
+    "deviceTypes": [
+      "default"
+    ]
+  }
+}
