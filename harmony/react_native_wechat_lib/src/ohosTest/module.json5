@@ -1,0 +1,11 @@
+{
+  "module": {
+    "name": "react_native_wechat_lib_test",
+    "type": "feature",
+    "deviceTypes": [
+      "default"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false
+  }
+}
