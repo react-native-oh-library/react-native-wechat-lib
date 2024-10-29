@@ -6,11 +6,11 @@
 
 #include "RNOH/Package.h"
 #include "RNOH/ArkTSTurboModule.h"
-#include "./turbo_modules/WechatLibTurboModule.h"
+#include "RNOH/generated/turbo_modules/WechatLibTurboModule.h"
 
 namespace rnoh {
 
-class BaseReactNativeOhosReactNativeWechatLibPackageTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {
+class BaseReactNativeWechatLibPackageTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {
   public:
     SharedTurboModule createTurboModule(Context ctx, const std::string &name) const override {
         if (name == "WechatLibTurboModule") {
@@ -20,7 +20,7 @@ class BaseReactNativeOhosReactNativeWechatLibPackageTurboModuleFactoryDelegate :
     };
 };
 
-class BaseReactNativeOhosReactNativeWechatLibPackageEventEmitRequestHandler : public EventEmitRequestHandler {
+class BaseReactNativeWechatLibPackageEventEmitRequestHandler : public EventEmitRequestHandler {
   public:
     void handleEvent(Context const &ctx) override {
         auto eventEmitter = ctx.shadowViewRegistry->getEventEmitter<facebook::react::EventEmitter>(ctx.tag);
@@ -37,12 +37,12 @@ class BaseReactNativeOhosReactNativeWechatLibPackageEventEmitRequestHandler : pu
 };
 
 
-class BaseReactNativeOhosReactNativeWechatLibPackage : public Package {
+class BaseReactNativeWechatLibPackage : public Package {
   public:
-    BaseReactNativeOhosReactNativeWechatLibPackage(Package::Context ctx) : Package(ctx){};
+    BaseReactNativeWechatLibPackage(Package::Context ctx) : Package(ctx){};
 
     std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate() override {
-        return std::make_unique<BaseReactNativeOhosReactNativeWechatLibPackageTurboModuleFactoryDelegate>();
+        return std::make_unique<BaseReactNativeWechatLibPackageTurboModuleFactoryDelegate>();
     }
 
     std::vector<facebook::react::ComponentDescriptorProvider> createComponentDescriptorProviders() override {
@@ -57,7 +57,7 @@ class BaseReactNativeOhosReactNativeWechatLibPackage : public Package {
 
     EventEmitRequestHandlers createEventEmitRequestHandlers() override {
         return {
-            std::make_shared<BaseReactNativeOhosReactNativeWechatLibPackageEventEmitRequestHandler>(),
+            std::make_shared<BaseReactNativeWechatLibPackageEventEmitRequestHandler>(),
         };
     }
 };

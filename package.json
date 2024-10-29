@@ -11,7 +11,7 @@
     "prepack": "bob build",
     "pack:prod": "npm pack",
     "start": "react-native start",
-    "codegen-lib": "react-native codegen-lib-harmony --no-safety-check --npm-package-name @react-native-ohos/react-native-wechat-lib --cpp-output-path ./example/harmony/react_native_wechat_lib/src/main/cpp/generated --ets-output-path ./example/harmony/react_native_wechat_lib/src/main/ets/generated --turbo-modules-spec-paths ./src/specs/NativeRNWechatLibModule.ts"
+    "codegen-lib": "react-native codegen-lib-harmony --no-safety-check --npm-package-name react-native-wechat-lib --cpp-output-path ./example/harmony/react_native_wechat_lib/src/main/cpp/generated --ets-output-path ./example/harmony/react_native_wechat_lib/src/main/ets/generated --turbo-modules-spec-paths ./src/specs/NativeRNWechatLibModule.ts"
   },
   "peerDependencies": {
     "react": "*",

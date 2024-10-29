@@ -1,23 +1,13 @@
-# react-native-ohos/react-native-wechat-lib
+# @react-native-ohos/react-native-wechat-lib
 
-> 原库基线版本: react-native-wechat-lib@3.0.4
+This project is based on [react-native-wechat-lib v3.0.4](https://github.com/little-snow-fox/react-native-wechat-lib)
 
-## 运行 `tester` 工程
+## Documentation
 
-### 安装依赖和环境准备
+- [中文](https://gitee.com/react-native-oh-library/usage-docs/blob/master/zh-cn/react-native-wechat-lib.md)
 
-1. 进入 `/tester`
-2. 执行 `npm run i`
-3. 用 DevEco Studio 打开 `tester/harmony` 目录
+- [English](https://gitee.com/react-native-oh-library/usage-docs/blob/master/en/react-native-wechat-lib.md)
 
-### 配置签名
+## License
 
-1. 打开 DevEco Studio `File -> Project Structure -> Signing Configs`
-2. 登录开发者账号即可自动签名
-
-### 运行
-
-1. 进入 `/tester`
-2. 执行 `npm run start`
-3. 用 DevEco Studio 打开 `tester/harmony`
-4. 执行 Build 与运行 `entry` 模块
+This library is licensed under [The MIT License (MIT)](https://github.com/react-native-oh-library/react-native-wechat-lib/blob/sig/License)
