@@ -10,6 +10,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
 import com.facebook.react.defaults.DefaultReactNativeHost;
 import com.facebook.soloader.SoLoader;
 // react-native-wechat-lib support (
+import com.imagepicker.ImagePickerPackage;
 import com.wechatlib.WeChatLibPackage;
 // )
 
@@ -31,6 +32,7 @@ public class MainApplication extends Application implements ReactApplication {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
             packages.add(new WeChatLibPackage());
+            packages.add(new ImagePickerPackage());
           return packages;
         }
 
