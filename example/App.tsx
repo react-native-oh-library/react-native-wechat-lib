@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { Tester, TestCase, TestSuite } from '@rnoh/testerino';
-import * as WeChat from 'react-native-wechat-lib';
+import * as WeChat from '@react-native-ohos/react-native-wechat-lib';
 import { APP_ID, APP_SECRET } from './src/constants';
 import { launchImageLibrary } from 'react-native-image-picker';
 
@@ -26,6 +26,26 @@ const App = () => {
   const handleOpenWXApp = async () => {
     try {
       await WeChat.openWXApp();
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
+  const handleCheckIsWXAppInstalled = async () => {
+    try {
+      const res = await WeChat.isWXAppInstalled();
+      Alert.alert(JSON.stringify(res));
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
+  const handleLaunchMiniProgram = async () => {
+    try {
+      await WeChat.launchMiniProgram({
+        userName: "gh_bd3176843a63",
+        miniProgramType: 2
+      });
     } catch (error) {
       console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
     }
@@ -123,9 +143,19 @@ const App = () => {
             <Button title="registerApp" onPress={handleRegisterApp} />
           </TestCase>
         </TestSuite>
+        <TestSuite name="微信是否安装">
+          <TestCase itShould="Click the button to check whether WeChat is installed">
+            <Button title="isWXAppInstalled" onPress={handleCheckIsWXAppInstalled} />
+          </TestCase>
+        </TestSuite>
         <TestSuite name="打开微信">
           <TestCase itShould="Click the button to launch the WeChat application">
             <Button title="openWXApp" onPress={handleOpenWXApp} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="打开小程序">
+          <TestCase itShould="Click the button to open the mini program">
+            <Button title="launchMiniProgram" onPress={handleLaunchMiniProgram} />
           </TestCase>
         </TestSuite>
         <TestSuite name="授权登录">
