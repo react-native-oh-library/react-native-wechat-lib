@@ -518,14 +518,16 @@ export function launchMiniProgram({ userName, miniProgramType = 0, path = "" }: 
       );
       return;
     }
-    nativeLaunchMiniProgram?.({ userName, miniProgramType, path });
-    emitter.once("WXLaunchMiniProgramReq.Resp", (resp) => {
+    const onLaunchMiniRes = (resp: any) => {
+      WechatLib.unregisterCallback("WXLaunchMiniProgramReq.Resp");
       if (resp.errCode === 0) {
         resolve(resp);
       } else {
         reject(new WechatError(resp));
       }
-    });
+    };
+    WechatLib.registerCallback("WXLaunchMiniProgramReq.Resp", onLaunchMiniRes);
+    nativeLaunchMiniProgram?.({ userName, miniProgramType, path });
   });
 }
 

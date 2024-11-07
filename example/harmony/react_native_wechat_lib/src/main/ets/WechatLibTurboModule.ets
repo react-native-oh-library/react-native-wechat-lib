@@ -30,6 +30,8 @@ import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
+import { bundleManager } from '@kit.AbilityKit';
+import OpenLinkOptions from '@ohos.app.ability.OpenLinkOptions';
 
 enum LoadingStatus {
   INIT,
@@ -59,9 +61,12 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   loadStatus: LoadingStatus = LoadingStatus.INIT
   private NOT_REGISTERED = "registerApp required.";
   private API_NOT_SUPPORTED = "Api not supported.";
+  private INVOKE_FAILED = "WeChat API invoke returns false.";
+  private INVALID_ARGUMENT = "invalid argument.";
   private logger = this.ctx.logger.clone('WechatLibTurboModuleLogger');
   listener = new EventEmitter();
-  unsubscribeAuthGotQrcode = () => {};
+  unsubscribeAuthGotQrcode = () => {
+  };
 
   subscribeAuthGotQrcode(onQRGet: (qrcode: string) => void) {
     this.unsubscribeAuthGotQrcode = this.listener.subscribe(
@@ -117,7 +122,19 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   isWXAppInstalled(callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+    try {
+      let link = 'weixin://test.example.com';
+      let canOpen = bundleManager.canOpenLink(link);
+      this.logger.info(JSON.stringify(canOpen));
+      callback(null, canOpen);
+    } catch (err) {
+      let message = (err as BusinessError).message;
+      callback(message, null);
+    }
   }
 
   isWXAppSupportApi(callback: CallbackBoolean): void {
@@ -139,9 +156,9 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     }
 
     try {
-      WechatLibTurboModule.wxApi.openWechat(this.context) as boolean;
-      // 常规是需要await等待结果返回，这里内部没有resolve，等不到结果 所以直接返回true
-      callback(null, true);
+      const res = await WechatLibTurboModule.wxApi.openWechat(this.context) as boolean;
+      this.logger.info('res:' + res)
+      callback(null, res);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Error while openWXAppopenWXApp ${message}`);
@@ -162,9 +179,9 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     req.transaction = ''
 
     try {
-      // 调用 api.sendReq 方法并返回结果
-      WechatLibTurboModule.wxApi.sendReq(this.context, req);
-      callback(null, true);
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      this.logger.info('sendAuthRequest res:' + res)
+      callback(null, res);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Error while sendAuthRequest ${message}`);
@@ -236,8 +253,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
 
     try {
       // 调用 api.sendReq 方法并返回结果
-      WechatLibTurboModule.wxApi.sendReq(this.context, req);
-      callback(null, true);
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`Error while openWXAppopenWXApp ${message}`);
@@ -291,8 +308,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
           return;
         }
 
-        WechatLibTurboModule.wxApi.sendReq(this.context, req);
-        callback(null, true);
+        const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+        callback(null, res);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'downloadImageWithUrl Unknown error';
         callback(message, null);
@@ -318,8 +335,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
       req.message = mediaMessage
 
-      WechatLibTurboModule.wxApi.sendReq(this.context, req);
-      callback(null, true);
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
       callback(message, null);
@@ -346,8 +363,31 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     return this.notSupportPromise(callback)
   }
 
-  launchMiniProgram(message: TM.WechatLibTurboModule.LaunchMiniProgramMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  async launchMiniProgram(message: TM.WechatLibTurboModule.LaunchMiniProgramMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+    let miniReq = new wxopensdk.LaunchMiniProgramReq
+    // 小程序原始id
+    miniReq.userName = message.userName
+    //拉起小程序页面的可带参路径，不填默认拉起小程序首页
+    miniReq.path = message.path
+    // 可选打开 开发版，体验版和正式版
+    miniReq.miniprogramType = message.miniProgramType
+
+    try {
+      this.logger.info('launchMiniProgram miniReq:' + JSON.stringify(miniReq))
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, miniReq) as boolean;
+      this.logger.info('launchMiniProgram res:' + res)
+      if (!res) {
+        return callback(this.INVALID_ARGUMENT, null);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      callback(message, null);
+      this.logger.error(`Error while sendAuthRequest ${message}`);
+    }
   }
 
   chooseInvoice(data: TM.WechatLibTurboModule.ChooseInvoice, callback: CallbackBoolean): void {
@@ -385,8 +425,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     }
 
     try {
-      WechatLibTurboModule.wxApi.sendReq(this.context, payReq);
-      callback(null);
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, payReq) as boolean;
+      callback(res ? null : this.INVOKE_FAILED);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
       callback(message);
