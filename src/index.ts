@@ -271,8 +271,8 @@ export function authByScan(appId: string, appSecret: string, onQRGet: (qrcode: s
     const timestamp = String(Math.round(Date.now() / 1000));
     const signature = createSignature(appId, nonceStr, ticket, timestamp);
 
-    // @ts-ignore
-    const unsubscribe = WechatLib.subscribeAuthGotQrcode(onQRGet);
+    WechatLib.unSubscribeAuthGotQrcode()
+    WechatLib.subscribeAuthGotQrcode(onQRGet);
     const ret = await nativeScan?.(appId, nonceStr, timestamp, "snsapi_userinfo", signature, "");
     WechatLib.unSubscribeAuthGotQrcode()
     if (!ret?.authCode) {
