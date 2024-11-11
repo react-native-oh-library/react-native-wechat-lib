@@ -211,7 +211,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       this.lastOAuth.stopOAuth()
     }
     let oauth = wxopensdk.DiffDevOAuthFactory.getDiffDevOAuth()!
-
+    this.lastOAuth = oauth;
     oauth.startOAuth(appid, scope, nonceStr, timeStamp, signature, {
       onGotQRCode: (base64JpegImageBuffer: string) => {
         this.loadStatus = LoadingStatus.SCANNING

@@ -62,6 +62,7 @@ const App = () => {
 
   const handleAuthByScanRequest = async () => {
     try {
+      setScanRes('');
       const res = await WeChat.authByScan(APP_ID, APP_SECRET, (qrcode: any) => {
         // 拿到 qrcode 用 Image 去渲染
         setQrcode(qrcode);
