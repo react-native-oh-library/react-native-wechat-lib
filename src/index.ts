@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 import { DeviceEventEmitter } from "react-native";
-import { sha1 } from "js-sha1";
 import WechatLib, {
   LaunchMiniProgramMetadata,
   PaymentLoad,
@@ -15,7 +14,6 @@ import WechatLib, {
 } from "./specs/NativeRNWechatLibModule";
 
 let isAppRegistered = false;
-const LoggerPrefix = 'WechatLibTurboModuleLogger'
 
 // Event emitter to dispatch request and response from WechatLib.
 const emitter = new EventEmitter();
@@ -173,132 +171,10 @@ const nativeSubscribeMessage = wrapApi(WechatLib.subscribeMessage);
 
 const nativeChooseInvoice = wrapApi(WechatLib.chooseInvoice);
 const nativeShareFile = wrapApi(WechatLib.shareFile);
-const nativeScan = wrapApi(WechatLib.authByScan);
+export const authByScan = wrapApi(WechatLib.authByScan);
 
 const NormalRes = { errCode: 0, errStr: '' };
 
-// https://developers.weixin.qq.com/doc/offiaccount/Basic_Information/Get_access_token.html
-const getAccessToken = async (appId: string, appSecret: string) => {
-  let url =
-  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" + appId + "&secret=" + appSecret;
-  const response = await fetch(url);
-  const res = await response.json();
-  return res.access_token;
-};
-
-const getSDKTicket = async (accessToken: string) => {
-  let url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=2&access_token=" + accessToken;
-  const response = await fetch(url);
-  const res = await response.json();
-  return res.ticket;
-};
-
-const createSignature = (appId: string, nonceStr: string, sdkTicket: string, timestamp: string) => {
-  const origin = "appid=" + appId + "&noncestr=" + nonceStr + "&sdk_ticket=" + sdkTicket + "&timestamp=" + timestamp;
-  const ret = sha1(origin);
-  return ret;
-};
-
-const getUserInfo = (appId: string, appSecret: string, code: string, callback: (res: any) => void) => {
-  let accessTokenUrl =
-    "https://api.weixin.qq.com/sns/oauth2/access_token?appid=" +
-    appId +
-    "&secret=" +
-    appSecret +
-    "&code=" +
-    code +
-    "&grant_type=authorization_code";
-  fetch(accessTokenUrl)
-    .then((res) => {
-      return res.json();
-    })
-    .then((res) => {
-      let userInfoUrl =
-        "https://api.weixin.qq.com/sns/userinfo?access_token=" + res.access_token + "&openid=" + res.openid;
-      fetch(userInfoUrl)
-        .then((res2) => {
-          return res2.json();
-        })
-        .then((json) => {
-          callback({
-            nickname: json.nickname,
-            headimgurl: json.headimgurl,
-            openid: json.openid,
-            unionid: json.unionid,
-          });
-        })
-        .catch((e) => {
-          console.warn(`${LoggerPrefix} wechat get user info fail `, e);
-          callback({ error: e });
-        });
-    })
-    .catch((e) => {
-      console.warn(`${LoggerPrefix} wechat get access code fail `, e);
-      callback({ error: e });
-    });
-};
-
-const generateObjectId = () => {
-  var timestamp = ((new Date().getTime() / 1000) | 0).toString(16); // eslint-disable-line no-bitwise
-  return (
-    timestamp +
-    "xxxxxxxxxxxxxxxx".replace(/[x]/g, function () {
-      return ((Math.random() * 16) | 0).toString(16).toLowerCase(); // eslint-disable-line no-bitwise
-    })
-  );
-};
-
-/**
- * @method authByScan
- * @param {String} appId - the app id
- * @param {String} appSecret - the app secret
- * @param {Function} onQRGet - (qrcode: string) => void
- * @return {Promise}
- */
-export function authByScan(appId: string, appSecret: string, onQRGet: (qrcode: string) => void) {
-  return new Promise(async (resolve, reject) => {
-    if (!appId || !appSecret) {
-      reject(
-        new WechatError({
-          errStr: "请申请open账号，并传入正确的 appId 和 appSecret",
-          errCode: -1,
-        })
-      );
-    }
-    const accessToken = await getAccessToken(appId, appSecret);
-    const ticket = await getSDKTicket(accessToken);
-    const nonceStr = generateObjectId();
-    const timestamp = String(Math.round(Date.now() / 1000));
-    const signature = createSignature(appId, nonceStr, ticket, timestamp);
-
-    WechatLib.unSubscribeAuthGotQrcode()
-    WechatLib.subscribeAuthGotQrcode(onQRGet);
-    const ret = await nativeScan?.(appId, nonceStr, timestamp, "snsapi_userinfo", signature, "");
-    WechatLib.unSubscribeAuthGotQrcode()
-    if (!ret?.authCode) {
-      reject(
-        new WechatError({
-          errStr: "Auth code 获取失败",
-          errCode: -1,
-        })
-      );
-      return;
-    }
-    getUserInfo(appId, appSecret, ret?.authCode, (result) => {
-      console.log(`${LoggerPrefix} 扫码登录结果`, result);
-      if (!result.error) {
-        resolve(result);
-      } else {
-        reject(
-          new WechatError({
-            errStr: "扫码登录失败" + JSON.stringify(result),
-            errCode: -2,
-          })
-        );
-      }
-    });
-  });
-}
 
 /**
  * @method sendAuthRequest
