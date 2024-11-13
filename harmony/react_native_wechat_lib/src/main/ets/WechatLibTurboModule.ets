@@ -202,35 +202,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     schemeData: string,
     callback: CallbackAuthCode
   ) {
-    if (!WechatLibTurboModule.wxApi) {
-      callback(this.NOT_REGISTERED, null);
-      return;
-    }
-
-    if (this.lastOAuth) {
-      this.lastOAuth.stopOAuth()
-    }
-    let oauth = wxopensdk.DiffDevOAuthFactory.getDiffDevOAuth()!
-    this.lastOAuth = oauth;
-    oauth.startOAuth(appid, scope, nonceStr, timeStamp, signature, {
-      onGotQRCode: (base64JpegImageBuffer: string) => {
-        this.loadStatus = LoadingStatus.SCANNING
-        const base64String: string = `data:image/jpeg;base64,${base64JpegImageBuffer}`
-        this.emitQRCode(base64String); // 触发 QRCode 事件
-      },
-      onQRCodeScanned: () => {
-        this.loadStatus = LoadingStatus.SCANNED
-      },
-      onAuthFinish: (authCode: string) => {
-        this.loadStatus = LoadingStatus.SUCCESS
-        callback(null, { authCode, errCode: null });
-      },
-      onAuthError: (errCode: wxopensdk.OAuthErrCode, errMsg: string) => {
-        this.loadStatus = LoadingStatus.FAILED
-        this.logger.error(`Error while startOAuth, errMsg is: ${errMsg}`);
-        callback(null, { authCode: null, errCode: errCode })
-      }
-    });
+    return callback(this.API_NOT_SUPPORTED, null);
   }
 
   async shareText(message: TM.WechatLibTurboModule.ShareTextMetadata, callback: CallbackBoolean) {
