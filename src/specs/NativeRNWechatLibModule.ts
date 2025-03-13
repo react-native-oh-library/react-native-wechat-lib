@@ -102,11 +102,11 @@ export interface ShareWebpageMetadata {
 }
 
 export interface ShareMiniProgramMetadata {
-  webpageUrl: string;
+  webpageUrl?: string;
   userName: string;
   path?: string;
   hdImageUrl?: string;
-  withShareTicket?: string;
+  withShareTicket?: boolean;
   miniProgramType?: Int32;
   title?: string;
   description?: string;
