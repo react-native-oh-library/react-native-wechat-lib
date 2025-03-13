@@ -104,6 +104,20 @@ const App = () => {
     );
   };
 
+  const handleShareMiniProgram = async () => {
+    try {
+      await WeChat.shareMiniProgram({
+        webpageUrl: "",
+        path:"pages/Home/Home",
+        userName: 'gh_11cd940dec44',
+        thumbImageUrl: "dog.jpg",
+        // thumbImageUrl: 'https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg',
+      });
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
   const handlePay = async () => {
     try {
       const res = await WeChat.pay({
@@ -171,6 +185,13 @@ Click the button to pull up the WeChat chat list and select friends to share rem
             itShould="
 Click the button to select a local picture, then pull up the WeChat chat list and select friends to share the picture">
             <Button title="shareLocalImage" onPress={handleShareLocalImage} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="分享小程序">
+          <TestCase
+            itShould="
+Click the button to pull up the WeChat chat list and select friends to share a miniProgram">
+            <Button title="handleShareMiniProgram" onPress={handleShareMiniProgram} />
           </TestCase>
         </TestSuite>
         <TestSuite name="支付">

@@ -32,6 +32,7 @@ import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
 import { bundleManager } from '@kit.AbilityKit';
 import OpenLinkOptions from '@ohos.app.ability.OpenLinkOptions';
+import image from '@ohos.multimedia.image';
 
 enum LoadingStatus {
   INIT,
@@ -63,6 +64,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   private API_NOT_SUPPORTED = "Api not supported.";
   private INVOKE_FAILED = "WeChat API invoke returns false.";
   private INVALID_ARGUMENT = "invalid argument.";
+  private THUMB_SIZE = 64;
   private logger = this.ctx.logger.clone('WechatLibTurboModuleLogger');
   listener = new EventEmitter();
   unsubscribeAuthGotQrcode = () => {
@@ -331,8 +333,93 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     return this.notSupportPromise(callback)
   }
 
-  shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  async shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    try {
+      const miniProgramObject = new wxopensdk.WXMiniProgramObject();
+      miniProgramObject.webpageUrl = message.webpageUrl ?? "";
+      // 小程序类型，默认正式版
+      miniProgramObject.miniprogramType = message.miniProgramType ?? wxopensdk.WXMiniProgramType.RELEASE;
+      // 小程序原始id
+      miniProgramObject.userName = message.userName ?? undefined;
+      // 小程序页面路径
+      miniProgramObject.path = message.path ?? undefined;
+      // 是否使用带shareTicket的分享
+      miniProgramObject.withShareTicket = message.withShareTicket ?? undefined;
+
+      const mediaMessage = new wxopensdk.WXMediaMessage();
+      mediaMessage.mediaObject = miniProgramObject;
+      mediaMessage.title = message.title ?? " ";
+      mediaMessage.description = message.description ?? " ";
+
+      let thumbImageUrl =
+        message.hdImageUrl ? message.hdImageUrl : (message.thumbImageUrl ? message.thumbImageUrl : null);
+
+      if (thumbImageUrl != null && !(thumbImageUrl === "")) {
+        if (thumbImageUrl.startsWith("http")) {
+          this.downloadImageWithUrl(thumbImageUrl, async (imageData: ArrayBuffer) => {
+            if (!imageData) {
+              callback("Failed to retrieve imageData", null);
+              return;
+            }
+            let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+            await this.shareMiniProgramSendReq(thumbPixel, mediaMessage, message, callback);
+
+          });
+        } else {
+          let thumbData = this.context.resourceManager.getRawFileContentSync(thumbImageUrl);
+          let thumbPixel = image.createImageSource(thumbData.buffer).createPixelMapSync()
+          await this.shareMiniProgramSendReq(thumbPixel, mediaMessage, message, callback);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
+      callback(message, null);
+    }
+  }
+
+  async shareMiniProgramSendReq(thumbPixel: image.PixelMap, mediaMessage: wxopensdk.WXMediaMessage,
+    message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean) {
+    // 图片压缩
+    let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+    mediaMessage.thumbData = new Uint8Array(thumbBuffer);
+
+    const req = new wxopensdk.SendMessageToWXReq();
+    req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+    req.message = mediaMessage;
+
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    // 调用 api.sendReq 方法并返回结果
+    const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+    callback(null, res);
+  }
+
+  async bitmapResizeGetBytes(sourcePixMap: image.PixelMap, maxCompressedImageSize: number): Promise<ArrayBuffer> {
+    let thumbBuffer = await image.createImagePacker().packToData(sourcePixMap, { format: "image/jpeg", quality: 100 });
+    let options = 100;
+    while (thumbBuffer.byteLength / 1024 > maxCompressedImageSize) {
+      if (options > 10) {
+        options -= 8;
+      } else {
+        // 计算压缩比
+        let imageInfo = await sourcePixMap.getImageInfo();
+        let scale: number = 280 / imageInfo.size.width;
+        await sourcePixMap.scale(scale, scale);
+        return this.bitmapResizeGetBytes(sourcePixMap, maxCompressedImageSize);
+      }
+      let packOpts: image.PackingOption = { format: "image/jpeg", quality: options };
+      let imagePacker = image.createImagePacker();
+      thumbBuffer = await imagePacker.packToData(sourcePixMap, packOpts);
+    }
+    return thumbBuffer
   }
 
   async launchMiniProgram(message: TM.WechatLibTurboModule.LaunchMiniProgramMetadata, callback: CallbackBoolean) {
