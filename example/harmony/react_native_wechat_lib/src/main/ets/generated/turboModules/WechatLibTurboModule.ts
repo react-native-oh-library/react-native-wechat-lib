@@ -28,7 +28,7 @@ export namespace WechatLibTurboModule {
   
   export type ShareWebpageMetadata = {webpageUrl: string, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene}
   
-  export type ShareMiniProgramMetadata = {webpageUrl: string, userName: string, path?: string, hdImageUrl?: string, withShareTicket?: boolean, miniProgramType?: number, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene}
+  export type ShareMiniProgramMetadata = {webpageUrl?: string, userName: string, path?: string, hdImageUrl?: string, withShareTicket?: boolean, miniProgramType?: number, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene}
   
   export type LaunchMiniProgramMetadata = {userName: string, miniProgramType?: number, path?: string}
   
