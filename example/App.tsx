@@ -108,10 +108,11 @@ const App = () => {
     try {
       await WeChat.shareMiniProgram({
         webpageUrl: "",
-        path:"pages/Home/Home",
-        userName: 'gh_11cd940dec44',
-        thumbImageUrl: "dog.jpg",
-        // thumbImageUrl: 'https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg',
+        path: "pages/Home/Home",
+        userName: "gh_11cd940dec44",
+        thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
+        title: "分享小程序Title",
+        description: "分享小程序描述信息"
       });
     } catch (error) {
       console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
