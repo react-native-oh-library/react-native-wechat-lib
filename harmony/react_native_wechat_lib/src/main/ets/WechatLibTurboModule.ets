@@ -236,10 +236,13 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   downloadImageWithUrl(url: string,
-    completion: (imageData: ArrayBuffer) => void) {
+    completion: (imageData: ArrayBuffer) => void, callback?: CallbackBoolean) {
     http.createHttp().request(url,
       (error: BusinessError, data: http.HttpResponse) => {
         if (error || data.responseCode != 200) {
+          if(callback){
+            callback("Download image failed, error code: " + data.responseCode, null)
+          }
           return
         }
         completion((data.result as ArrayBuffer))
@@ -360,34 +363,29 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
         message.hdImageUrl ? message.hdImageUrl : (message.thumbImageUrl ? message.thumbImageUrl : null);
 
       if (thumbImageUrl != null && !(thumbImageUrl === "")) {
-        if (thumbImageUrl.startsWith("http")) {
-          this.downloadImageWithUrl(thumbImageUrl, async (imageData: ArrayBuffer) => {
-            if (!imageData) {
-              callback("Failed to retrieve imageData", null);
-              return;
-            }
-            let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
-            await this.shareMiniProgramSendReq(thumbPixel, mediaMessage, message, callback);
+        this.downloadImageWithUrl(thumbImageUrl, async (imageData: ArrayBuffer) => {
+          if (!imageData) {
+            callback("ShareMiniProgram Failed to retrieve imageData", null);
+            return;
+          }
+          let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+          // 图片压缩
+          let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+          mediaMessage.thumbData = new Uint8Array(thumbBuffer);
 
-          });
-        } else {
-          let thumbData = this.context.resourceManager.getRawFileContentSync(thumbImageUrl);
-          let thumbPixel = image.createImageSource(thumbData.buffer).createPixelMapSync()
-          await this.shareMiniProgramSendReq(thumbPixel, mediaMessage, message, callback);
-        }
+          await this.shareMiniProgramSendReq(mediaMessage, message, callback);
+        }, callback);
+      } else {
+        await this.shareMiniProgramSendReq(mediaMessage, message, callback);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'shareLocalImage Unknown error';
+      const message = err instanceof Error ? err.message : 'shareMiniProgram Unknown error';
       callback(message, null);
     }
   }
 
-  async shareMiniProgramSendReq(thumbPixel: image.PixelMap, mediaMessage: wxopensdk.WXMediaMessage,
+  async shareMiniProgramSendReq(mediaMessage: wxopensdk.WXMediaMessage,
     message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean) {
-    // 图片压缩
-    let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
-    mediaMessage.thumbData = new Uint8Array(thumbBuffer);
-
     const req = new wxopensdk.SendMessageToWXReq();
     req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
     req.message = mediaMessage;

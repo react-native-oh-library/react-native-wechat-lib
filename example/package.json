@@ -8,7 +8,7 @@
     "start": "hdc rport tcp:8081 tcp:8081 && react-native start",
     "codegen": "react-native codegen-harmony --rnoh-module-path ./harmony/entry/oh_modules/@rnoh/react-native-openharmony",
     "pack:pkg": "cd ../ && npm run pack:prod && cd ./example",
-    "install:pkg": "npm uninstall @react-native-ohos/react-native-wechat-lib && npm run pack:pkg && npm i @react-native-ohos/react-native-wechat-lib@file:../react-native-ohos-react-native-wechat-lib-3.0.5.tgz",
+    "install:pkg": "npm uninstall @react-native-ohos/react-native-wechat-lib && npm run pack:pkg && npm i @react-native-ohos/react-native-wechat-lib@file:../react-native-ohos-react-native-wechat-lib-3.0.6-rc.2.tgz",
     "dev": "npm run codegen && react-native bundle-harmony --dev --minify=false",
     "prod": "npm run codegen && react-native bundle-harmony --dev=false --minify=true",
     "postinstall": "node ./scripts/create-build-profile"
@@ -16,7 +16,7 @@
   "dependencies": {
     "@gorhom/portal": "^1.0.14",
     "@react-native-oh-tpl/react-native-image-picker": "^7.0.3-0.1.6",
-    "@react-native-ohos/react-native-wechat-lib": "file:../react-native-ohos-react-native-wechat-lib-3.0.6-rc.1.tgz",
+    "@react-native-ohos/react-native-wechat-lib": "file:../react-native-ohos-react-native-wechat-lib-3.0.6-rc.2.tgz",
     "react": "18.2.0",
     "react-native": "0.72.5",
     "react-native-harmony": "npm@react-native-oh/react-native-harmony@^0.72.32"
