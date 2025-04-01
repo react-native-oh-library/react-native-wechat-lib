@@ -25,7 +25,7 @@
 import { EventEmitter, TurboModule } from '@rnoh/react-native-openharmony/ts';
 import { TM } from './generated/ts';
 import { common } from '@kit.AbilityKit';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
 import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
@@ -401,7 +401,14 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   async bitmapResizeGetBytes(sourcePixMap: image.PixelMap, maxCompressedImageSize: number): Promise<ArrayBuffer> {
-    let thumbBuffer = await image.createImagePacker().packToData(sourcePixMap, { format: "image/jpeg", quality: 100 });
+    let thumbBuffer: ArrayBuffer;
+    let imagePacker: ESObject = image.createImagePacker();
+    if (deviceInfo.sdkApiVersion >= 13 || imagePacker.packToData) {
+      thumbBuffer = await imagePacker.packToData(sourcePixMap, { format: "image/jpeg", quality: 100 });
+    } else {
+      thumbBuffer = await imagePacker.packing(sourcePixMap, { format: "image/jpeg", quality: 100 });
+    }
+
     let options = 100;
     while (thumbBuffer.byteLength / 1024 > maxCompressedImageSize) {
       if (options > 10) {
@@ -414,8 +421,12 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
         return this.bitmapResizeGetBytes(sourcePixMap, maxCompressedImageSize);
       }
       let packOpts: image.PackingOption = { format: "image/jpeg", quality: options };
-      let imagePacker = image.createImagePacker();
-      thumbBuffer = await imagePacker.packToData(sourcePixMap, packOpts);
+      let imagePacker: ESObject = image.createImagePacker();
+      if (deviceInfo.sdkApiVersion >= 13 || imagePacker.packToData) {
+        thumbBuffer = await imagePacker.packToData(sourcePixMap, packOpts);
+      }else{
+        thumbBuffer = await imagePacker.packing(sourcePixMap, packOpts);
+      }
     }
     return thumbBuffer
   }
