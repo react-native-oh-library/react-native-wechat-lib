@@ -41,8 +41,8 @@ const App = () => {
   const handleLaunchMiniProgram = async () => {
     try {
       await WeChat.launchMiniProgram({
-        userName: "gh_bd3176843a63",
-        miniProgramType: 2
+        userName: "gh_11cd940dec44",
+        miniProgramType: 0
       });
     } catch (error) {
       console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
@@ -108,7 +108,6 @@ const App = () => {
     try {
       await WeChat.shareMiniProgram({
         webpageUrl: "",
-        path: "pages/Home/Home",
         userName: "gh_11cd940dec44",
         thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
         title: "分享小程序Title",
