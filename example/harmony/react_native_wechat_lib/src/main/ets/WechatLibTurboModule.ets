@@ -240,7 +240,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     http.createHttp().request(url,
       (error: BusinessError, data: http.HttpResponse) => {
         if (error || data.responseCode != 200) {
-          if(callback){
+          if (callback) {
             callback("Download image failed, error code: " + data.responseCode, null)
           }
           return
@@ -332,8 +332,48 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     return this.notSupportPromise(callback)
   }
 
-  shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  async shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata, callback: CallbackBoolean): Promise<void> {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    try {
+      const webpageObject = new wxopensdk.WXWebpageObject()
+      webpageObject.webpageUrl = message.webpageUrl ?? ''
+
+      const mediaMessage = new wxopensdk.WXMediaMessage()
+      mediaMessage.mediaObject = webpageObject
+      mediaMessage.title = message.title ?? ' '
+      mediaMessage.description = message.description ?? ' '
+
+      let thumbImageUrl = (message.thumbImageUrl ? message.thumbImageUrl : null);
+      if (thumbImageUrl != null && !(thumbImageUrl === "")) {
+        await new Promise<void>((resolve) => {
+          this.downloadImageWithUrl(thumbImageUrl!, async (imageData: ArrayBuffer) => {
+            if (!imageData) {
+              callback("shareWebpage Failed to retrieve imageData", null);
+              return;
+            }
+            let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+            // 图片压缩
+            let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+            mediaMessage.thumbData = new Uint8Array(thumbBuffer);
+            resolve()
+          }, callback);
+        })
+      }
+
+      const req = new wxopensdk.SendMessageToWXReq()
+      req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+      req.message = mediaMessage
+
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareWebpage Unknown error';
+      callback(message, null);
+    }
   }
 
   async shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean) {
