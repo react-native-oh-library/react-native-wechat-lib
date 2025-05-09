@@ -30,7 +30,6 @@ import { wxopensdk, WXEventHandler } from '../../../ts';
 import { http } from '@kit.NetworkKit';
 import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
-import { bundleManager } from '@kit.AbilityKit';
 import OpenLinkOptions from '@ohos.app.ability.OpenLinkOptions';
 import image from '@ohos.multimedia.image';
 
@@ -129,10 +128,9 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       return;
     }
     try {
-      let link = 'weixin://test.example.com';
-      let canOpen = bundleManager.canOpenLink(link);
-      this.logger.info(JSON.stringify(canOpen));
-      callback(null, canOpen);
+      let res = WechatLibTurboModule.wxApi.isWXAppInstalled();
+      this.logger.info("isWXAppInstalled: " + JSON.stringify(res));
+      callback(null, res);
     } catch (err) {
       let message = (err as BusinessError).message;
       callback(message, null);
