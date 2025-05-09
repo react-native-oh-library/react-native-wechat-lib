@@ -103,15 +103,63 @@ const App = () => {
       },
     );
   };
-
+  
   const handleShareMiniProgram = async () => {
     try {
       await WeChat.shareMiniProgram({
         webpageUrl: "",
         userName: "gh_11cd940dec44",
         thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
-        title: "分享小程序Title",
+        title: "分享小程序标题",
         description: "分享小程序描述信息"
+      });
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
+  const handleShareWebpage = async () => {
+    try {
+      await WeChat.shareWebpage({
+        webpageUrl: "https://ohpm.openharmony.cn/#/cn/home",
+        thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
+        title: "分享网页标题",
+        description: "分享网页描述信息",
+        scene: 0
+      });
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
+  const handleShareFile = async () => {
+    launchImageLibrary(
+      { mediaType: 'photo', selectionLimit: 1 },
+      async data => {
+        if (data.assets?.length) {
+          try {
+            await WeChat.shareFile({
+              url: data.assets[0].uri || '',
+              title: "分享文件标题",
+              scene: 0,
+            });
+          } catch (error) {
+            console.log('error:', error);
+          }
+        }
+      },
+    );
+  };
+
+  const handleShareVideo = async () => {
+    try {
+      await WeChat.shareVideo({
+        videoUrl: 'https://encrypted-vtbn0.gstatic.com/video?q=tbn:ANd9GcQPt0qbJ-TMyXt_fKgwfjE4y2qqS543MIWjjQ',
+        videoLowBandUrl: 'https://encrypted-vtbn0.gstatic.com/video?q=tbn:ANd9GcQPt0qbJ-TMyXt_fKgwfjE4y2qqS543MIWjjQ',
+        title: "分享视频标题",
+        description: "分享视频描述信息",
+        thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
+        scene: 0
       });
     } catch (error) {
       console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
@@ -192,6 +240,27 @@ Click the button to select a local picture, then pull up the WeChat chat list an
             itShould="
 Click the button to pull up the WeChat chat list and select friends to share a miniProgram">
             <Button title="handleShareMiniProgram" onPress={handleShareMiniProgram} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="分享网页">
+          <TestCase
+            itShould="
+Click the button to pull up the WeChat chat list and select friends to share a webpage">
+            <Button title="handleShareWebpage" onPress={handleShareWebpage} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="分享文件">
+          <TestCase
+            itShould="
+Click the button to pull up the WeChat chat list and select friends to share a file">
+            <Button title="handleShareFile" onPress={handleShareFile} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="分享视频">
+          <TestCase
+            itShould="
+Click the button to pull up the WeChat chat list and select friends to share a video">
+            <Button title="handleShareVideo" onPress={handleShareVideo} />
           </TestCase>
         </TestSuite>
         <TestSuite name="支付">
