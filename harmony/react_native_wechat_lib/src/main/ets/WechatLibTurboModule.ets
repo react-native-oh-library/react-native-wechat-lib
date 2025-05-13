@@ -237,9 +237,9 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     completion: (imageData: ArrayBuffer) => void, callback?: CallbackBoolean) {
     http.createHttp().request(url,
       (error: BusinessError, data: http.HttpResponse) => {
-        if (error || data.responseCode != 200) {
+        if (error || data?.responseCode != 200) {
           if(callback){
-            callback("Download image failed, error code: " + data.responseCode, null)
+            callback("Download image failed, error code: " + data?.responseCode, null)
           }
           return
         }
@@ -318,22 +318,158 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     }
   }
 
-  shareFile(message: TM.WechatLibTurboModule.ShareFileMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  /**
+   * 分享文件
+   * @param message
+   * @param callback
+   */
+  async shareFile(message: TM.WechatLibTurboModule.ShareFileMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    try {
+      //初始化一个 WXFileObject 对象，填写分享的文件 uri
+      const fileObject = new wxopensdk.WXFileObject();
+      fileObject.fileUri = fileUri.getUriFromPath(message.url.replace("file://", ""));
+
+      // 用 WXFileObject 对象初始化一个 WXMediaMessage 对象
+      const mediaMessage = new wxopensdk.WXMediaMessage();
+      mediaMessage.mediaObject = fileObject;
+      mediaMessage.title = message.title ?? " ";
+
+      const req = new wxopensdk.SendMessageToWXReq();
+      req.transaction = Date.now().toString();
+      req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+      req.message = mediaMessage;
+
+      // 调用 api.sendReq 方法并返回结果
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareWebpage Unknown error';
+      callback(message, null);
+    }
   }
 
   shareMusic(message: TM.WechatLibTurboModule.ShareMusicMetadata, callback: CallbackBoolean): void {
     return this.notSupportPromise(callback)
   }
 
-  shareVideo(message: TM.WechatLibTurboModule.ShareVideoMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  /**
+   * 分享视频
+   * @param message
+   * @param callback
+   */
+  async shareVideo(message: TM.WechatLibTurboModule.ShareVideoMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    try {
+      // 初始化一个 WXVideoObject 对象，填写分享的视频链接
+      const videoObject = new wxopensdk.WXVideoObject();
+      videoObject.videoUrl = message.videoUrl ?? "";
+      videoObject.videoLowBandUrl = message.videoLowBandUrl ?? "";
+
+      // 用 WXVideoObject 对象初始化一个 WXMediaMessage 对象
+      const mediaMessage = new wxopensdk.WXMediaMessage();
+      mediaMessage.mediaObject = videoObject;
+      mediaMessage.title = message.title ?? " ";
+      mediaMessage.description = message.description ?? " ";
+
+      let thumbImageUrl = (message.thumbImageUrl ? message.thumbImageUrl : null);
+      if (thumbImageUrl != null && !(thumbImageUrl === "")) {
+        await new Promise<void>((resolve) => {
+          this.downloadImageWithUrl(thumbImageUrl!, async (imageData: ArrayBuffer) => {
+            if (!imageData) {
+              callback("shareVideo Failed to retrieve imageData", null);
+              return;
+            }
+            let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+            // 图片压缩
+            let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+            mediaMessage.thumbData = new Uint8Array(thumbBuffer);
+            resolve();
+          }, callback);
+        })
+      }
+      // 构造一个Req
+      const req = new wxopensdk.SendMessageToWXReq();
+      req.transaction = "video";
+      req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+      req.message = mediaMessage;
+
+      // 调用 api.sendReq 方法并返回结果
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareVideo Unknown error';
+      callback(message, null);
+    }
   }
 
-  shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  /**
+   * 分享网页
+   * @param message
+   * @param callback
+   */
+  async shareWebpage(message: TM.WechatLibTurboModule.ShareWebpageMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    try {
+      // 初始化一个 WXWebpageObject 对象，填写分享的网页链接
+      const webpageObject = new wxopensdk.WXWebpageObject();
+      webpageObject.webpageUrl = message.webpageUrl ?? "";
+
+      // 用 WXWebpageObject 对象初始化一个 WXMediaMessage 对象
+      const mediaMessage = new wxopensdk.WXMediaMessage();
+      mediaMessage.mediaObject = webpageObject;
+      mediaMessage.title = message.title ?? " ";
+      mediaMessage.description = message.description ?? " ";
+
+      let thumbImageUrl = (message.thumbImageUrl ? message.thumbImageUrl : null);
+      if (thumbImageUrl != null && !(thumbImageUrl === "")) {
+        await new Promise<void>((resolve) => {
+          this.downloadImageWithUrl(thumbImageUrl!, async (imageData: ArrayBuffer) => {
+            if (!imageData) {
+              callback("shareWebpage Failed to retrieve imageData", null);
+              return;
+            }
+            let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+            // 图片压缩
+            let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+            mediaMessage.thumbData = new Uint8Array(thumbBuffer);
+          }, callback);
+          resolve();
+        })
+      }
+      // 构造一个Req
+      const req = new wxopensdk.SendMessageToWXReq();
+      req.transaction = "webpage";
+      req.scene = message.scene ?? wxopensdk.SendMessageToWXReq.WXSceneSession;
+      req.message = mediaMessage;
+
+      // 调用 api.sendReq 方法并返回结果
+      const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+      callback(null, res);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareWebpage Unknown error';
+      callback(message, null);
+    }
   }
 
+  /**
+   * 分享小程序
+   * @param message
+   * @param callback
+   */
   async shareMiniProgram(message: TM.WechatLibTurboModule.ShareMiniProgramMetadata, callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
       callback(this.NOT_REGISTERED, null);
