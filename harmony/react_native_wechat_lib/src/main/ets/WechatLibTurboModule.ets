@@ -235,16 +235,47 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
 
   downloadImageWithUrl(url: string,
     completion: (imageData: ArrayBuffer) => void, callback?: CallbackBoolean) {
-    http.createHttp().request(url,
-      (error: BusinessError, data: http.HttpResponse) => {
-        if (error || data?.responseCode != 200) {
+    let fileData: Array<ArrayBuffer> = new Array();
+
+    let httpRequest = http.createHttp();
+    httpRequest.on("dataReceive", (data)=>{
+      fileData.push(data);
+    })
+    httpRequest.requestInStream(url,
+      (error: BusinessError, data: number) => {
+        if (error || data != 200) {
           if(callback){
-            callback("Download image failed, error code: " + data?.responseCode, null)
+            callback("Download image failed, error code: " + data, null);
+            httpRequest.off('dataReceive');
+            httpRequest.destroy();
           }
           return
         }
-        completion((data.result as ArrayBuffer))
+        let result = this.combineArrayBuffers(fileData);
+        completion((result as ArrayBuffer));
+        httpRequest.off('dataReceive');
+        httpRequest.destroy();
       })
+  }
+
+  combineArrayBuffers(arrayBuffers: ArrayBuffer[]): ArrayBuffer {
+    // 计算多个ArrayBuffer的总字节大小
+    let totalByteLength = 0;
+    for (const arrayBuffer of arrayBuffers) {
+      totalByteLength += arrayBuffer.byteLength;
+    }
+    // 创建一个新的ArrayBuffer
+    const combinedArrayBuffer = new ArrayBuffer(totalByteLength);
+    // 创建一个Uint8Array来操作新的ArrayBuffer
+    const combinedUint8Array = new Uint8Array(combinedArrayBuffer);
+    // 依次复制每个ArrayBuffer的内容到新的ArrayBuffer中
+    let offset = 0;
+    for (const arrayBuffer of arrayBuffers) {
+      const sourceUint8Array = new Uint8Array(arrayBuffer);
+      combinedUint8Array.set(sourceUint8Array, offset);
+      offset += sourceUint8Array.length;
+    }
+    return combinedArrayBuffer;
   }
 
   async shareImage(message: TM.WechatLibTurboModule.ShareImageMetadata, callback: CallbackBoolean) {
@@ -319,6 +350,72 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   }
 
   /**
+   * 通过url获取文件名称
+   *  @param url
+   */
+   getFileNameFromUrl(url: string): string {
+    try {
+      // 获取路径部分并解码（处理可能的 URL 编码）
+      let pathname = decodeURIComponent(url);
+
+      // 提取最后一部分作为文件名
+      const parts = pathname.split('/');
+      const fileName = parts.pop() || '';
+
+      let result = fileName.split('?')[0].split('#')[0] || '';
+      return result
+    } catch (error) {
+      this.logger.error(`getFileNameFromUrl exception, error URL:'${ url }, error message: ${ JSON.stringify(error) }`);
+      // 非 URL 字符串处理（例如相对路径）
+      const parts = url.split('/');
+      return parts.pop() || '';
+    }
+  }
+
+  /**
+   * 下载远程文件并写入本地wechatLibShare目录下
+   * @param url
+   * @param callback
+   * @returns
+   */
+  async loadRawDataFromURL(url: string, callback: CallbackBoolean){
+    let rawData: ArrayBuffer | null = null;
+    await new Promise<void>((resolve) => {
+      this.downloadImageWithUrl(url, async (data: ArrayBuffer) => {
+        if (!data) {
+          callback("loadRawDataFromURL Failed to retrieve data", null);
+          return;
+        }
+        rawData = data;
+        resolve();
+      }, callback);
+    });
+
+    if(!rawData) {
+      callback("loadRawDataFromURL retrieve data is empty", null);
+      return null
+    }
+
+    try {
+      let file: fileIo.File | undefined;
+      let fileName = this.getFileNameFromUrl(url);
+      let filePath = getContext(this).filesDir + `/wechatLibShare`;
+      // 创建wechatLibShare目录
+      if(!fileIo.accessSync(filePath)){
+        fileIo.mkdirSync(filePath);
+      }
+      filePath += `/${ fileName }`;
+      file = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
+      fileIo.writeSync(file.fd, rawData);
+      fileIo.closeSync(file);
+      return filePath
+    } catch (e) {
+      callback("loadRawDataFromURL Failed to write data, error message: " + JSON.stringify(e), null);
+      return null
+    }
+  }
+
+  /**
    * 分享文件
    * @param message
    * @param callback
@@ -332,7 +429,13 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     try {
       //初始化一个 WXFileObject 对象，填写分享的文件 uri
       const fileObject = new wxopensdk.WXFileObject();
-      fileObject.fileUri = fileUri.getUriFromPath(message.url.replace("file://", ""));
+
+      let url = (message.url ? message.url : null);
+      // 下载网络资源并写入本地
+      if (url && url.startsWith("http")) {
+        url = await this.loadRawDataFromURL(url, callback);
+      }
+      fileObject.fileUri = fileUri.getUriFromPath(url?.replace("file://", ""));
 
       // 用 WXFileObject 对象初始化一个 WXMediaMessage 对象
       const mediaMessage = new wxopensdk.WXMediaMessage();
@@ -348,7 +451,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
       callback(null, res);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'shareWebpage Unknown error';
+      const message = err instanceof Error ? err.message : 'shareFile Unknown error';
       callback(message, null);
     }
   }

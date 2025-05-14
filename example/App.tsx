@@ -151,11 +151,23 @@ const App = () => {
     );
   };
 
+  const handleShareRemoteFile = async () => {
+    try {
+      await WeChat.shareFile({
+        url: 'https://images.openharmony.cn/compatibility/files/OpenHarmony%E5%85%BC%E5%AE%B9%E6%80%A7%E6%A0%87%E8%AF%86%E4%BD%BF%E7%94%A8%E6%8C%87%E5%BC%95_V1.pptx',
+        title: "分享远程文件标题",
+        scene: 0,
+      });
+    } catch (error) {
+      console.log('%c  error:', 'color: #0e93e0;background: #aaefe5;', error);
+    }
+  };
+
   const handleShareVideo = async () => {
     try {
       await WeChat.shareVideo({
-        videoUrl: 'https://encrypted-vtbn0.gstatic.com/video?q=tbn:ANd9GcQPt0qbJ-TMyXt_fKgwfjE4y2qqS543MIWjjQ',
-        videoLowBandUrl: 'https://encrypted-vtbn0.gstatic.com/video?q=tbn:ANd9GcQPt0qbJ-TMyXt_fKgwfjE4y2qqS543MIWjjQ',
+        videoUrl: 'https://www.runoob.com/try/demo_source/movie.mp4',
+        videoLowBandUrl: 'https://www.runoob.com/try/demo_source/movie.mp4',
         title: "分享视频标题",
         description: "分享视频描述信息",
         thumbImageUrl: "https://img.tukuppt.com/photo-big/00/10/77/619619681755c5463.jpg",
@@ -249,11 +261,18 @@ Click the button to pull up the WeChat chat list and select friends to share a w
             <Button title="handleShareWebpage" onPress={handleShareWebpage} />
           </TestCase>
         </TestSuite>
-        <TestSuite name="分享文件">
+        <TestSuite name="分享文件-本地文件">
           <TestCase
             itShould="
 Click the button to pull up the WeChat chat list and select friends to share a file">
             <Button title="handleShareFile" onPress={handleShareFile} />
+          </TestCase>
+        </TestSuite>
+        <TestSuite name="分享文件-远程文件">
+          <TestCase
+            itShould="
+Click the button to pull up the WeChat chat list and select friends to share a file">
+            <Button title="handleShareOnlineFile" onPress={handleShareRemoteFile} />
           </TestCase>
         </TestSuite>
         <TestSuite name="分享视频">
