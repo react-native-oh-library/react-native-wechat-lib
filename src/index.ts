@@ -11,6 +11,7 @@ import WechatLib, {
   ShareVideoMetadata,
   ShareWebpageMetadata,
   SubscribeMessageMetadata,
+  ShareMetadata,
 } from "./specs/NativeRNWechatLibModule";
 
 let isAppRegistered = false;
@@ -167,6 +168,7 @@ const nativeShareMusic = wrapApi(WechatLib.shareMusic);
 const nativeShareVideo = wrapApi(WechatLib.shareVideo);
 const nativeShareWebpage = wrapApi(WechatLib.shareWebpage);
 const nativeShareMiniProgram = wrapApi(WechatLib.shareMiniProgram);
+const nativeShareToTimeline = wrapApi(WechatLib.shareToTimeline);
 const nativeSubscribeMessage = wrapApi(WechatLib.subscribeMessage);
 
 const nativeChooseInvoice = wrapApi(WechatLib.chooseInvoice);
@@ -365,6 +367,24 @@ export function shareMiniProgram(data: ShareMiniProgramMetadata) {
   }
   return new Promise((resolve, reject) => {
     nativeShareMiniProgram?.(data);
+    emitter.once("SendMessageToWX.Resp", (resp) => {
+      if (resp.errCode === 0) {
+        resolve(resp);
+      } else {
+        reject(new WechatError(resp));
+      }
+    });
+  });
+}
+
+/**
+ * Share to timeLine
+ * @method shareToTimeline
+ * @param {Object} data
+ */
+export function shareToTimeline(data: ShareMetadata) {
+  return new Promise((resolve, reject) => {
+    nativeShareToTimeline?.(data);
     emitter.once("SendMessageToWX.Resp", (resp) => {
       if (resp.errCode === 0) {
         resolve(resp);

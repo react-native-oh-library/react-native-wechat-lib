@@ -27,6 +27,7 @@ export interface WeChatResp {
 
 export interface ShareMetadata {
   type: "news" | "text" | "imageUrl" | "imageFile" | "imageResource" | "video" | "audio" | "file";
+  title?: string;
   thumbImage?: string;
   description?: string;
   webpageUrl?: string;
@@ -35,6 +36,9 @@ export interface ShareMetadata {
   musicUrl?: string;
   filePath?: string;
   fileExtension?: string;
+  mediaTagName?: string;
+  messageAction?: string;
+  messageExt?: string
 }
 
 export interface AuthResponse {
@@ -192,6 +196,7 @@ export interface Spec extends TurboModule {
   shareVideo: (message: ShareVideoMetadata, callback: CallbackBoolean) => void;
   shareWebpage: (message: ShareWebpageMetadata, callback: CallbackBoolean) => void;
   shareMiniProgram: (message: ShareMiniProgramMetadata, callback: CallbackBoolean) => void;
+  shareToTimeline: (message: ShareMetadata, callback: CallbackBoolean) => void;
   launchMiniProgram: (message: LaunchMiniProgramMetadata, callback: CallbackBoolean) => void;
   chooseInvoice: (data: ChooseInvoice, callback: CallbackBoolean) => void;
   pay: (payload: PaymentLoad, callback: Callback1) => void;
