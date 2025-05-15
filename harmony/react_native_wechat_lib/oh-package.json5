@@ -6,7 +6,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@rnoh/react-native-openharmony": "0.72.32",
+    "@rnoh/react-native-openharmony": "0.72.67",
     "@tencent/wechat_open_sdk": "1.0.14"
   }
 }

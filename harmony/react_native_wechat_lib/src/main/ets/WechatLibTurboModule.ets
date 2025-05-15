@@ -741,4 +741,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   subscribeMessage(message: TM.WechatLibTurboModule.SubscribeMessageMetadata, callback: CallbackBoolean): void {
     return this.notSupportPromise(callback)
   }
+
+  shareToTimeline(message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackBoolean): void {
+    return this.notSupportPromise(callback)
+  }
 }
