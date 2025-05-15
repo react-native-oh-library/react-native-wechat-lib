@@ -38,7 +38,8 @@ export interface ShareMetadata {
   fileExtension?: string;
   mediaTagName?: string;
   messageAction?: string;
-  messageExt?: string
+  messageExt?: string;
+  extInfo?: string;
 }
 
 export interface AuthResponse {
