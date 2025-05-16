@@ -30,7 +30,7 @@ export namespace WechatLibTurboModule {
   
   export type ShareMiniProgramMetadata = {webpageUrl?: string, userName: string, path?: string, hdImageUrl?: string, withShareTicket?: boolean, miniProgramType?: number, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene}
 
-  export type ShareMetadata = {type: string, title?: string, thumbImage?: string, description?: string, webpageUrl?: string, imageUrl?: string, videoUrl?: string, musicUrl?: string, filePath?: string, fileExtension?: string, mediaTagName?: string, messageAction?: string, messageExt?: string}
+  export type ShareMetadata = {type: string, title?: string, thumbImage?: string, description?: string, webpageUrl?: string, imageUrl?: string, videoUrl?: string, musicUrl?: string, filePath?: string, fileExtension?: string, mediaTagName?: string, messageAction?: string, messageExt?: string, extInfo?: string}
   
   export type LaunchMiniProgramMetadata = {userName: string, miniProgramType?: number, path?: string}
   

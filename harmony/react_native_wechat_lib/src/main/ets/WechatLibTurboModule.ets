@@ -32,6 +32,7 @@ import { fileIo, fileUri } from '@kit.CoreFileKit';
 import { Want } from '@kit.AbilityKit';
 import OpenLinkOptions from '@ohos.app.ability.OpenLinkOptions';
 import image from '@ohos.multimedia.image';
+import { util } from '@kit.ArkTS'
 
 enum LoadingStatus {
   INIT,
@@ -44,6 +45,8 @@ enum LoadingStatus {
 }
 
 type CallbackBoolean = (error: string | null, result: null | boolean) => void
+
+type CallbackMediaObject = (result: wxopensdk.WXImageObject | null) => void
 
 interface GeneratedTypeLiteralInterface_2 {
   authCode: string | null;
@@ -320,7 +323,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
         const message = err instanceof Error ? err.message : 'downloadImageWithUrl Unknown error';
         callback(message, null);
       }
-    });
+    }, callback);
 
   }
 
@@ -549,8 +552,8 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
             // 图片压缩
             let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
             mediaMessage.thumbData = new Uint8Array(thumbBuffer);
+            resolve();
           }, callback);
-          resolve();
         })
       }
       // 构造一个Req
@@ -742,7 +745,360 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     return this.notSupportPromise(callback)
   }
 
-  shareToTimeline(message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackBoolean): void {
-    return this.notSupportPromise(callback)
+  /**
+   * share to timeline
+   * @param message
+   * @param callback
+   */
+  async shareToTimeline(message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+    await this._share(wxopensdk.SendMessageToWXReq.WXSceneTimeline, message, callback);
+  }
+
+  /**
+   * 统一对thumbImage进行处理
+   * @param scene
+   * @param message
+   * @param callback
+   */
+  async _share(scene: number, message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackBoolean) {
+    try {
+      let uri: string | null = message.thumbImage ? message.thumbImage : null;
+
+      if (uri === null || uri === "") {
+        // thumbImage为空
+        this._share_handleType(scene, message, null, callback);
+      } else if (uri.startsWith('http')) {
+        // thumbImage为远程图片
+        this.downloadImageWithUrl(uri, async (imageData: ArrayBuffer) => {
+          // 图片压缩
+          let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+          let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+          this._share_handleType(scene, message, thumbBuffer, callback);
+        }, callback)
+      } else {
+        // thumbImage为本地resource目录下的图片
+        let imageData = getContext(this).resourceManager.getRawFileContentSync(uri);
+        // 图片压缩
+        let thumbPixel = image.createImageSource(imageData).createPixelMapSync();
+        let thumbBuffer = await this.bitmapResizeGetBytes(thumbPixel, this.THUMB_SIZE);
+        this._share_handleType(scene, message, thumbBuffer, callback);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'shareToTimeline Unknown error';
+      callback(message, null);
+    }
+  }
+
+  /**
+   * 为不同分享类型创建多媒体消息中包含的数据对象， 支持： news、text、imageUrl、imageResource、imageFile、video、audio、file
+   * @param scene
+   * @param message
+   * @param thumbImage
+   * @param callback
+   */
+  async _share_handleType(scene: number, message: TM.WechatLibTurboModule.ShareMetadata,
+    thumbImage: ArrayBuffer | ArrayBufferLike | null, callback: CallbackBoolean) {
+    if (!message.type) {
+      callback(this.INVALID_ARGUMENT, null);
+      return
+    }
+
+    let type: string = message.type;
+    let mediaObject: wxopensdk.IMediaObject | null = null;
+    switch (type) {
+      case 'news':
+        // mediaObject = this._jsonToWebpageMedia(message as TM.WechatLibTurboModule.ShareMetadata);
+        this.notSupportPromise(callback);
+        return;
+      case "text":
+        mediaObject = this._jsonToTextMedia(message);
+        break;
+      case "imageUrl":
+      case "imageResource":
+        await this.__jsonToImageUrlMedia(message, (mediaObject: wxopensdk.IMediaObject | null) => {
+          if (mediaObject == null) {
+            callback(this.INVALID_ARGUMENT, null);
+          } else {
+            this._share_handleProperty(scene, message, thumbImage, mediaObject, callback);
+          }
+        });
+        return;
+      case "imageFile":
+        await this.__jsonToImageFileMedia(message, (mediaObject: wxopensdk.IMediaObject | null) => {
+          if (mediaObject == null) {
+            callback(this.INVALID_ARGUMENT, null);
+          } else {
+            this._share_handleProperty(scene, message, thumbImage, mediaObject, callback);
+          }
+        });
+        return;
+      case "video":
+        // mediaObject = this.__jsonToVideoMedia(message);
+        this.notSupportPromise(callback);
+        return;
+      case "audio":
+        // mediaObject = this.__jsonToMusicMedia(message);
+        this.notSupportPromise(callback);
+        return;
+      case "file":
+        // mediaObject = this.__jsonToFileMedia(message);
+        this.notSupportPromise(callback);
+        return;
+    }
+
+
+    if (mediaObject === null) {
+      callback(this.INVALID_ARGUMENT, null);
+    } else {
+      this._share_handleProperty(scene, message, thumbImage, mediaObject, callback);
+    }
+
+  }
+
+  /**
+   * 处理多媒体消息携带信息，并发送调用 api.sendReq 分享至目标场景
+   * @param scene
+   * @param message
+   * @param thumbImage
+   * @param mediaObject
+   * @param callback
+   */
+  async _share_handleProperty(scene: number, message: TM.WechatLibTurboModule.ShareMetadata,
+    thumbImage: ArrayBuffer | ArrayBufferLike | null, mediaObject: wxopensdk.IMediaObject, callback: CallbackBoolean) {
+    if (!WechatLibTurboModule.wxApi) {
+      callback(this.NOT_REGISTERED, null);
+      return;
+    }
+
+    const mediaMessage = new wxopensdk.WXMediaMessage();
+    mediaMessage.mediaObject = mediaObject;
+
+    if (thumbImage != null) {
+      mediaMessage.thumbData = new Uint8Array(thumbImage);
+    }
+    if (message.title) {
+      mediaMessage.title = message.title
+    }
+    if (message.description) {
+      mediaMessage.description = message.description
+    }
+    if (message.mediaTagName) {
+      mediaMessage.mediaTagName = message.mediaTagName
+    }
+    if (message.messageAction) {
+      mediaMessage.messageAction = message.messageAction
+    }
+    if (message.messageExt) {
+      mediaMessage.messageExt = message.messageExt
+    }
+
+    // 构造一个Req
+    const req = new wxopensdk.SendMessageToWXReq();
+    req.transaction = util.generateRandomUUID().toString();
+    req.scene = scene;
+    req.message = mediaMessage;
+
+    // 调用 api.sendReq 方法并返回结果
+    const res = await WechatLibTurboModule.wxApi.sendReq(this.context, req) as boolean;
+    callback(null, res);
+  }
+
+  /**
+   * 将rawfile目录下的相对路径转换成uri
+   * @param context
+   * @param url
+   * @returns
+   */
+  transRawFileToUri(context: Context, url: string): string | null {
+    try {
+      let content = context.resourceManager.getRawFileContentSync(url);
+      if (!content) {
+        this.logger.info('get rawfile content failed, url is: ' + url);
+        return null;
+      }
+      let fileName = this.getFileNameFromUrl(url);
+      let filePath = getContext(this).filesDir + `/wechatLibShare`;
+      // 创建wechatLibShare目录
+      if (!fileIo.accessSync(filePath)) {
+        fileIo.mkdirSync(filePath);
+      }
+      filePath += `/${fileName}`;
+      this.writeFile(filePath, content.buffer);
+      return filePath;
+    } catch (err) {
+      this.logger.error('trans rawfile to uri failed, error message: ' + JSON.stringify(err))
+      return null
+    }
+  }
+
+  /**
+   * 将ArrayBuffer写入本地文件
+   * @param filePath
+   * @param rawData
+   * @returns
+   */
+  writeFile(filePath: string, rawData: ArrayBuffer | ArrayBufferLike) {
+    try {
+      let file: fileIo.File | undefined =
+        fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
+      fileIo.writeSync(file.fd, rawData);
+      fileIo.closeSync(file);
+      return true
+    } catch (err) {
+      this.logger.error('write file failed, error message: ' + JSON.stringify(err))
+      return false
+    }
+  }
+
+  // 构建 WXTextObject 对象
+  _jsonToTextMedia(message: TM.WechatLibTurboModule.ShareMetadata) {
+    if (!message.description) {
+      return null;
+    }
+
+    let ret = new wxopensdk.WXTextObject();
+    ret.text = message.description;
+    return ret;
+  }
+
+  /**
+   * 构建 WXWebpageObject 对象
+   */
+  _jsonToWebpageMedia(message: TM.WechatLibTurboModule.ShareMetadata) {
+    if (!message.webpageUrl) {
+      return null;
+    }
+
+    let ret = new wxopensdk.WXWebpageObject();
+    ret.webpageUrl = message.webpageUrl;
+    if (message.extInfo) {
+      ret.extInfo = message.extInfo;
+    }
+    return ret;
+  }
+
+  /**
+   * 构建 WXImageObject 对象
+   * @param imageUrl
+   * @param callback
+   */
+  async __jsonToImageMedia(imageUrl: string, callback: CallbackMediaObject) {
+    let imageUri: string | null = imageUrl;
+    try {
+      // get resource uri.
+      if (!(imageUri.startsWith("http") || imageUrl.startsWith("file"))) {
+        imageUri = this.transRawFileToUri(getContext(this), imageUrl);
+      }
+    } catch (e) {
+      imageUri = null;
+    }
+
+    if (imageUri === null) {
+      callback(null);
+      return;
+    }
+
+    if (!(imageUri.startsWith("http"))) {
+      // 本地文件
+      let imageObject = new wxopensdk.WXImageObject();
+      imageObject.uri = fileUri.getUriFromPath(imageUri.replace("file://", ""));
+      callback(imageObject);
+    } else {
+      // 远程文件
+      let callBean = (error: string | null, result: null | boolean) => {
+        callback(null);
+        return
+      }
+      this.downloadImageWithUrl(imageUrl!, async (imageData: ArrayBuffer) => {
+        if (!imageData) {
+          callback(null);
+          return
+        }
+
+        let filePath = getContext(this).filesDir + `/original-${Date.now()}.jpg`
+        let result = this.writeFile(filePath, imageData);
+        if (!result) {
+          callback(null);
+          return
+        }
+        let imageObject = new wxopensdk.WXImageObject();
+        imageObject.uri = fileUri.getUriFromPath(filePath);
+
+        callback(imageObject);
+      }, callBean)
+    }
+  }
+
+  /**
+   * 处理本地图片路径
+   * @param message
+   * @param callback
+   */
+  async __jsonToImageUrlMedia(message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackMediaObject) {
+    if (!message.imageUrl) {
+      callback(null);
+      return;
+    }
+    let imageUrl = message.imageUrl;
+    await this.__jsonToImageMedia(imageUrl, callback);
+  }
+
+  /**
+   * 处理网络图片路径
+   * @param message
+   * @param callback
+   */
+  __jsonToImageFileMedia(message: TM.WechatLibTurboModule.ShareMetadata, callback: CallbackMediaObject) {
+    if (!message.imageUrl) {
+      callback(null);
+      return;
+    }
+
+    let imageUrl = message.imageUrl;
+    if (!imageUrl.toLowerCase().startsWith("file://")) {
+      imageUrl = "file://" + imageUrl;
+    }
+    this.__jsonToImageMedia(imageUrl, callback);
+  }
+
+  /**
+   * 构建 WXMusicObject 对象
+   * @param message
+   */
+  __jsonToMusicMedia(message: TM.WechatLibTurboModule.ShareMetadata) {
+    // todo
+  }
+
+  /**
+   * 构建 WXVideoObject 对象
+   * @param message
+   * @returns
+   */
+  __jsonToVideoMedia(message: TM.WechatLibTurboModule.ShareMetadata) {
+    if (!message.videoUrl) {
+      return null;
+    }
+
+    let ret = new wxopensdk.WXVideoObject();
+    ret.videoUrl = message.videoUrl;
+    return ret;
+  }
+
+  /**
+   * 构建 WXFileObject 对象
+   * @param message
+   * @returns
+   */
+  __jsonToFileMedia(message: TM.WechatLibTurboModule.ShareMetadata) {
+    if (!message.filePath) {
+      return null;
+    }
+    let ret = new wxopensdk.WXFileObject();
+    ret.fileUri = message.filePath
+    return ret;
   }
 }
