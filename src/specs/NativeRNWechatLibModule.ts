@@ -104,6 +104,7 @@ export interface ShareWebpageMetadata {
   description?: string;
   thumbImageUrl?: string;
   scene?: WXScene;
+  isSecretMessage?: boolean;
 }
 
 export interface ShareMiniProgramMetadata {
