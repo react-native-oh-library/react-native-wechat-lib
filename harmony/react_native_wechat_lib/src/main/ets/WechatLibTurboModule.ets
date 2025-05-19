@@ -533,6 +533,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
       // 初始化一个 WXWebpageObject 对象，填写分享的网页链接
       const webpageObject = new wxopensdk.WXWebpageObject();
       webpageObject.webpageUrl = message.webpageUrl ?? "";
+      webpageObject.isSecretMessage = message.isSecretMessage ?? false;
 
       // 用 WXWebpageObject 对象初始化一个 WXMediaMessage 对象
       const mediaMessage = new wxopensdk.WXMediaMessage();
