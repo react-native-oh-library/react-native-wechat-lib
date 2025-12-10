@@ -21,5 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+import { WechatLibPackage as RNWechatLibPackage } from "./src/main/ets/WechatLibPackage"
 export * from "./ts";
+export default RNWechatLibPackage;
