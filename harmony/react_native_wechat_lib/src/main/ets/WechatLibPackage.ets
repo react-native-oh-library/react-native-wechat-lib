@@ -31,6 +31,7 @@ import type {
 } from '@rnoh/react-native-openharmony/ts';
 import { TM } from "./generated/ts"
 import { WechatLibTurboModule } from './WechatLibTurboModule';
+import { RNOHPackage } from '@rnoh/react-native-openharmony';
 
 
 class WechatLibTurboModuleFactory extends TurboModulesFactory {
@@ -47,7 +48,7 @@ class WechatLibTurboModuleFactory extends TurboModulesFactory {
 }
 
 
-export class WechatLibPackage extends RNPackage {
+export class WechatLibPackage extends RNOHPackage {
   createTurboModulesFactory(ctx: TurboModuleContext): TurboModulesFactory {
     return new WechatLibTurboModuleFactory(ctx);
   }

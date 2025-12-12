@@ -1,6 +1,6 @@
 # @react-native-ohos/react-native-wechat-lib
 
-This project is based on [react-native-wechat-lib v3.0.4](https://github.com/little-snow-fox/react-native-wechat-lib)
+This project is based on [react-native-wechat-lib@v3.0.0](https://github.com/little-snow-fox/react-native-wechat-lib/tree/v3.0.0)
 
 ## Documentation
 

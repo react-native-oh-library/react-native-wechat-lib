@@ -11,7 +11,7 @@
     "prepack": "bob build",
     "pack:prod": "npm pack",
     "start": "react-native start",
-    "codegen-lib": "react-native codegen-lib-harmony --no-safety-check --npm-package-name react-native-wechat-lib --cpp-output-path ./example/harmony/react_native_wechat_lib/src/main/cpp/generated --ets-output-path ./example/harmony/react_native_wechat_lib/src/main/ets/generated --turbo-modules-spec-paths ./src/specs/NativeRNWechatLibModule.ts"
+    "codegen-lib": "react-native codegen-lib-harmony --no-safety-check --npm-package-name react-native-wechat-lib --cpp-output-path ./harmony/react_native_wechat_lib/src/main/cpp/generated --ets-output-path ./harmony/react_native_wechat_lib/src/main/ets/generated --turbo-modules-spec-paths ./src/specs/NativeRNWechatLibModule.ts"
   },
   "peerDependencies": {
     "react": "*",
@@ -43,7 +43,13 @@
     "wechat-lib"
   ],
   "harmony": {
-    "alias": "react-native-wechat-lib"
+    "alias": "react-native-wechat-lib",
+    "autolinking": {
+      "etsPackageClassName":"RNWechatLibPackage",
+      "cppPackageClassName":"RNWechatLibPackage",
+      "cmakeLibraryTargetName": "wechat_lib", 
+      "ohPackageName": "@react-native-ohos/react-native-wechat-lib"
+    }
   },
   "react-native-builder-bob": {
     "source": "src",
@@ -58,5 +64,9 @@
         }
       ]
     ]
+  },
+   "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

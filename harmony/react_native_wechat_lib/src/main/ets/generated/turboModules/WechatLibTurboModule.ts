@@ -29,7 +29,7 @@ export namespace WechatLibTurboModule {
   export type ShareWebpageMetadata = {webpageUrl: string, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene, isSecretMessage?: boolean}
   
   export type ShareMiniProgramMetadata = {webpageUrl?: string, userName: string, path?: string, hdImageUrl?: string, withShareTicket?: boolean, miniProgramType?: number, title?: string, description?: string, thumbImageUrl?: string, scene?: WXScene}
-
+  
   export type ShareMetadata = {type: string, title?: string, thumbImage?: string, description?: string, webpageUrl?: string, imageUrl?: string, videoUrl?: string, musicUrl?: string, filePath?: string, fileExtension?: string, mediaTagName?: string, messageAction?: string, messageExt?: string, extInfo?: string}
   
   export type LaunchMiniProgramMetadata = {userName: string, miniProgramType?: number, path?: string}
@@ -70,9 +70,9 @@ export namespace WechatLibTurboModule {
     shareWebpage(message: ShareWebpageMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
     shareMiniProgram(message: ShareMiniProgramMetadata, callback: (error: null | string, result: null | boolean) => void): void;
-
+  
     shareToTimeline(message: ShareMetadata, callback: (error: null | string, result: null | boolean) => void): void;
-
+  
     launchMiniProgram(message: LaunchMiniProgramMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
     chooseInvoice(data: ChooseInvoice, callback: (error: null | string, result: null | boolean) => void): void;
