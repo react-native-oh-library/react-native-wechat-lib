@@ -59,6 +59,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
   private appId: string | null = null;
   private wxEventHandler = WXEventHandler
   private static wxApi: wxopensdk.WXApi | null = null;
+  private static pendingWants: Array<Want> = [];
   private context = getContext(this) as common.UIAbilityContext;
   lastOAuth: wxopensdk.IDiffDevOAuth | null = null
   loadStatus: LoadingStatus = LoadingStatus.INIT
@@ -91,8 +92,22 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     this.wxEventHandler.unregisterOnWXRespCallback(name)
   }
 
+  private static flushPendingWants() {
+    if (!WechatLibTurboModule.wxApi || WechatLibTurboModule.pendingWants.length === 0) {
+      return;
+    }
+    const wants = WechatLibTurboModule.pendingWants.splice(0, WechatLibTurboModule.pendingWants.length);
+    wants.forEach((pendingWant: Want) => {
+      WechatLibTurboModule.wxApi?.handleWant(pendingWant, WXEventHandler);
+    });
+  }
+
   public static handleWant(want: Want) {
-    WechatLibTurboModule.wxApi?.handleWant(want, WXEventHandler)
+    if (!WechatLibTurboModule.wxApi) {
+      WechatLibTurboModule.pendingWants.push(want);
+      return;
+    }
+    WechatLibTurboModule.wxApi.handleWant(want, WXEventHandler)
   }
 
   /**
@@ -117,6 +132,7 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     try {
       this.appId = appId;
       WechatLibTurboModule.wxApi = wxopensdk.WXAPIFactory.createWXAPI(appId);
+      WechatLibTurboModule.flushPendingWants();
       callback(null, true)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
