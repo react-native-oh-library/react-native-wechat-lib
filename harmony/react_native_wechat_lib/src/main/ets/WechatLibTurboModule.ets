@@ -196,18 +196,6 @@ export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTur
     this.listener.emit('onAuthGotQrcode', base64String);
   }
 
-  async authByScan(
-    appid: string,
-    nonceStr: string,
-    timeStamp: string,
-    scope: string,
-    signature: string,
-    schemeData: string,
-    callback: CallbackAuthCode
-  ) {
-    return callback(this.API_NOT_SUPPORTED, null);
-  }
-
   async shareText(message: TM.WechatLibTurboModule.ShareTextMetadata, callback: CallbackBoolean) {
     if (!WechatLibTurboModule.wxApi) {
       callback(this.NOT_REGISTERED, null)
