@@ -189,7 +189,6 @@ export interface Spec extends TurboModule {
   getApiVersion: (callback: CallbackBoolean) => void;
   openWXApp: (callback: CallbackBoolean) => void;
   sendAuthRequest: (scope: string, state: string, callback: CallbackBoolean) => void;
-  authByScan: (appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string, callback: CallbackAuthCode) => void;
   shareText: (message: ShareTextMetadata, callback: CallbackBoolean) => void;
   shareImage: (message: ShareImageMetadata, callback: CallbackBoolean) => void;
   shareLocalImage: (message: ShareImageMetadata, callback: CallbackBoolean) => void;

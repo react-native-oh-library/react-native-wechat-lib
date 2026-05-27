@@ -53,8 +53,6 @@ export namespace WechatLibTurboModule {
   
     sendAuthRequest(scope: string, state: string, callback: (error: null | string, result: null | boolean) => void): void;
   
-    authByScan(appId: string, nonceStr: string, timeStamp: string, scope: string, signature: string, schemeData: string, callback: (error: null | string, result: null | GeneratedTypeLiteralInterface_2) => void): void;
-  
     shareText(message: ShareTextMetadata, callback: (error: null | string, result: null | boolean) => void): void;
   
     shareImage(message: ShareImageMetadata, callback: (error: null | string, result: null | boolean) => void): void;

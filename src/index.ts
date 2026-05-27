@@ -173,7 +173,6 @@ const nativeSubscribeMessage = wrapApi(WechatLib.subscribeMessage);
 
 const nativeChooseInvoice = wrapApi(WechatLib.chooseInvoice);
 const nativeShareFile = wrapApi(WechatLib.shareFile);
-export const authByScan = wrapApi(WechatLib.authByScan);
 
 const NormalRes = { errCode: 0, errStr: '' };
 
