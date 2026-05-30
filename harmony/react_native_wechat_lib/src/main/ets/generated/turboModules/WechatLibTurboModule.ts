@@ -14,8 +14,6 @@ export namespace WechatLibTurboModule {
     WXSceneSpecifiedSession = 3,
   }
 
-  export type GeneratedTypeLiteralInterface_2 = {authCode: null | string, errCode: null | number}
-  
   export type ShareTextMetadata = {text: string, scene?: WXScene}
   
   export type ShareImageMetadata = {imageUrl: string, scene?: WXScene}
