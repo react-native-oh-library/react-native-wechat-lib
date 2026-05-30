@@ -48,13 +48,6 @@ type CallbackBoolean = (error: string | null, result: null | boolean) => void
 
 type CallbackMediaObject = (result: wxopensdk.WXImageObject | null) => void
 
-interface GeneratedTypeLiteralInterface_2 {
-  authCode: string | null;
-  errCode: wxopensdk.OAuthErrCode | null;
-}
-
-type CallbackAuthCode = (error: string | null, result: GeneratedTypeLiteralInterface_2 | null) => void
-
 export class WechatLibTurboModule extends TurboModule implements TM.WechatLibTurboModule.Spec {
   private appId: string | null = null;
   private wxEventHandler = WXEventHandler

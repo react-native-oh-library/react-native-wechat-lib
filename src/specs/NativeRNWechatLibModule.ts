@@ -173,14 +173,6 @@ export interface IChooseInvoiceRes {
 
 type Callback1 = (result: Object | null) => void;
 type CallbackBoolean = (error: string | null, result: boolean | null) => void;
-// type Emit
-
-interface GeneratedTypeLiteralInterface_2 {
-  authCode: string | null;
-  errCode: Int32 | null;
-}
-
-type CallbackAuthCode = (error: string | null, result: GeneratedTypeLiteralInterface_2 | null) => void
 
 export interface Spec extends TurboModule {
   registerApp: (appId: string, universalLink: string, callback: CallbackBoolean) => void;
