@@ -2,6 +2,9 @@
 
 ## 鸿蒙化Log
 
+### v3.1.1
+- release v3.1.1
+
 ### v3.1.1-rc.2
 - fix:移除扫码登录接口遗留代码 by @qiaojianqiang in [#77](https://github.com/react-native-oh-library/react-native-wechat-lib/pull/77)
 
