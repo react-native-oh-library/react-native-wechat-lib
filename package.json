@@ -43,7 +43,13 @@
     "wechat-lib"
   ],
   "harmony": {
-    "alias": "react-native-wechat-lib"
+    "alias": "react-native-wechat-lib",
+    "autolinking": {
+      "etsPackageClassName":"RNWechatLibPackage",
+      "cppPackageClassName":"RNWechatLibPackage",
+      "cmakeLibraryTargetName": "wechat_lib", 
+      "ohPackageName": "@react-native-ohos/react-native-wechat-lib"
+    }
   },
   "react-native-builder-bob": {
     "source": "src",

@@ -22,4 +22,6 @@
  * SOFTWARE.
  */
 
+import { WechatLibPackage as RNWechatLibPackage } from './src/main/ets/WechatLibPackage';
 export * from "./ts";
+export default RNWechatLibPackage;
