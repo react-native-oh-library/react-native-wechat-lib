@@ -24,7 +24,8 @@
 
 import {
   TurboModulesFactory,
-  RNPackage} from '@rnoh/react-native-openharmony/ts';
+  } from '@rnoh/react-native-openharmony/ts';
+import { RNOHPackage } from '@rnoh/react-native-openharmony';
 import type {
   TurboModule,
   TurboModuleContext,
@@ -47,7 +48,7 @@ class WechatLibTurboModuleFactory extends TurboModulesFactory {
 }
 
 
-export class WechatLibPackage extends RNPackage {
+export class WechatLibPackage extends RNOHPackage {
   createTurboModulesFactory(ctx: TurboModuleContext): TurboModulesFactory {
     return new WechatLibTurboModuleFactory(ctx);
   }
