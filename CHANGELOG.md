@@ -2,6 +2,9 @@
 
 ## 鸿蒙化Log
 
+### v3.2.0-rc.1
+- pre-release:@react-native-ohos/react-native-wechat-lib@3.2.0-rc.1
+
 ### v3.1.1
 - release v3.1.1
 
