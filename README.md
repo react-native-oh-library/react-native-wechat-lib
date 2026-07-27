@@ -4,9 +4,9 @@ This project is based on [react-native-wechat-lib v3.0.4](https://github.com/lit
 
 ## Documentation
 
-- [中文](https://gitee.com/react-native-oh-library/usage-docs/blob/master/zh-cn/react-native-wechat-lib.md)
+- [中文](https://gitcode.com/CPF-RN/usage-docs/blob/master/zh-cn/react-native-wechat-lib.md)
 
-- [English](https://gitee.com/react-native-oh-library/usage-docs/blob/master/en/react-native-wechat-lib.md)
+- [English](https://gitcode.com/CPF-RN/usage-docs/blob/master/en/react-native-wechat-lib.md)
 
 ## License
 
